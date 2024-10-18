@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "salaries"
+version = "0.1.0"
+description = ""
+authors = ["Minh DOAN"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.0"
+uvicorn = "^0.31.1"
+sqlalchemy-utils = "^0.41.2"
+sqlalchemy = "^2.0.35"
+utils = "^1.0.2"
+alembic = "^1.13.3"
+python-dotenv = "^1.0.1"
+requests = "^2.32.3"
+types-requests = "^2.32.0.20241016"
+python-multipart = "^0.0.12"
+psycopg2-binary = "^2.9.9"
+libsql-experimental = "^0.0.41"
+sqlalchemy-libsql = "^0.1.0"
+tenacity = "^9.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+langchain = "^0.3.3"
+openai = "^1.51.2"
+duckduckgo-search = "^6.3.2"
+langchain-community = "^0.3.2"
+langchain-openai = "^0.2.2"
+ruff = "^0.6.8"
+isort = "^5.13.2"
+mypy = "^1.11.2"
+pytest = "^8.3.3"
+anyio = "^4.6.0"
+pytest-asyncio = "^0.24.0"
+pytest-tornasync = "^0.6.0.post2"
+pytest-trio = "^0.8.0"
+pytest-twisted = "^1.14.3"
+twisted = "^24.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+lint.ignore = ["E741"]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "."
+]
