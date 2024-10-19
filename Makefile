@@ -102,7 +102,10 @@ deploy-backend: build-and-push
 		--platform managed \
 		--region $(REGION) \
 		--allow-unauthenticated \
-		--set-env-vars PROJECT_ID=$(PROJECT_ID)
+		--set-env-vars PROJECT_ID=$(PROJECT_ID) \
+		--set-env-vars ALLOWED_ORIGINS=$(shell if [ -n "$(ALLOWED_ORIGINS)" ]; then echo "$(ALLOWED_ORIGINS)"; else awk -F "=" "/ALLOWED_ORIGINS/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
+		--set-env-vars SQLALCHEMY_DATABASE_URL=$(shell if [ -n "$(SQLALCHEMY_DATABASE_URL)" ]; then echo "$(SQLALCHEMY_DATABASE_URL)"; else awk -F "=" "/SQLALCHEMY_DATABASE_URL/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi)
+
 
 set-backend-url:
 	@CLOUD_RUN_URL=$$(gcloud run services describe $(IMAGE_NAME) --region $(REGION) --format='value(status.url)') && \
