@@ -170,6 +170,7 @@ const SalaryListPage = () => {
     setFilters(pendingFilters);
     setShowFilterModal(false);
     setIsLoading(true); // Set loading state immediately
+    setCurrentPage(1); // Reset to first page when applying filters
     fetchSalaries(pendingFilters); // Pass pendingFilters directly to fetchSalaries
   };
 
@@ -387,7 +388,8 @@ const SalaryListPage = () => {
       min_added_date: null,
       max_added_date: null,
     });
-    fetchSalaries();
+    setCurrentPage(1); // Reset to first page when resetting filters
+    fetchSalaries(initialFilters);
   };
 
   const genderOptions = [
