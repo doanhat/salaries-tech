@@ -41,3 +41,44 @@
   max-width: 100%;
   margin: 0;
 }
+
+/* Add these styles at the end of the file */
+.table-responsive {
+  overflow-x: auto;
+  position: relative;
+}
+
+.table {
+  position: relative;
+}
+
+@media (max-width: 767px) {
+  .table th,
+  .table td {
+    min-width: 100px;
+  }
+
+  .table th:first-child,
+  .table td:first-child,
+  .table th:last-child,
+  .table td:last-child {
+    position: sticky;
+    background-color: #f8f9fa;
+    z-index: 1;
+  }
+
+  .table th:first-child,
+  .table td:first-child {
+    left: 0;
+  }
+
+  .table th:last-child,
+  .table td:last-child {
+    right: 0;
+  }
+}
+
+.modal-90w {
+  width: 90%;
+  max-width: none !important;
+}

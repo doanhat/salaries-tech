@@ -41,9 +41,9 @@ describe("SalaryListPage", () => {
 
     // Check if the main elements are rendered
     expect(
-      screen.getByRole("button", { name: "Add New Salary" }),
+      screen.getByRole("button", { name: "Add Salary" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Open Filters")).toBeInTheDocument();
+    expect(screen.getByText("Filters")).toBeInTheDocument();
 
     // Wait for the initial data to load
     await waitFor(() => {

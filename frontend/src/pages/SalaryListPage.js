@@ -11,6 +11,7 @@ import {
   Alert,
   Dropdown,
   ButtonGroup,
+  Container,
 } from "react-bootstrap";
 import Select from "react-select";
 import DatePicker from "react-datepicker";
@@ -25,8 +26,53 @@ import SalaryPieChart from "../components/dashboard/SalaryPieChart";
 import TopCitiesBarChart from "../components/dashboard/TopCitiesBarChart";
 import { debounce } from "lodash";
 import { capitalizeWords } from "../utils/stringUtils";
+import { useMediaQuery } from "react-responsive";
+import styled from "styled-components";
 
 import "react-datepicker/dist/react-datepicker.css";
+
+// Add these styled components
+const StyledTable = styled(Table)`
+  width: 100%;
+  min-width: max-content;
+`;
+
+const TableCell = styled.td`
+  white-space: nowrap;
+  padding: 8px;
+`;
+
+const NarrowCell = styled(TableCell)`
+  min-width: 100px; // Even narrower for certain columns
+`;
+
+const StickyCell = styled(TableCell)`
+  position: sticky;
+  background-color: #f8f9fa;
+  z-index: 2;
+  ${(props) => props.left && `left: ${props.left};`}
+  ${(props) => props.right && `right: ${props.right};`}
+`;
+
+const ScrollableWrapper = styled.div`
+  overflow-x: auto;
+  position: relative;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+`;
+
+const LoadingOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
 
 const SalaryListPage = () => {
   const [salaries, setSalaries] = useState([]);
@@ -72,6 +118,8 @@ const SalaryListPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+
+  const isMobile = useMediaQuery({ maxWidth: 767 });
 
   const fetchSalaries = useCallback(
     async (activeFilters = filters) => {
@@ -399,7 +447,7 @@ const SalaryListPage = () => {
   ];
 
   const handleSort = (column) => {
-    if (column === sortBy) {
+    if (sortBy === column) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortBy(column);
@@ -407,20 +455,16 @@ const SalaryListPage = () => {
     }
   };
 
-  const SortableHeader = ({ column, label }) => (
-    <th onClick={() => handleSort(column)} style={{ cursor: "pointer" }}>
-      {label}{" "}
-      {sortBy === column ? (
-        sortOrder === "asc" ? (
-          "▲"
-        ) : (
-          "▼"
-        )
-      ) : (
-        <span style={{ opacity: 0.3 }}>▲▼</span>
-      )}
-    </th>
-  );
+  const SortableHeader = ({ column, label }) => {
+    const isSortedBy = sortBy === column;
+    const icon = isSortedBy ? (sortOrder === "asc" ? "▲" : "▼") : "⇅";
+
+    return (
+      <th style={{ cursor: "pointer" }} onClick={() => handleSort(column)}>
+        {label} {icon}
+      </th>
+    );
+  };
 
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
@@ -437,6 +481,116 @@ const SalaryListPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
     }
+  };
+
+  const renderSalaryRow = (salary) => {
+    return (
+      <tr key={salary.id}>
+        <StickyCell left="0">{salary.company?.name || "N/A"}</StickyCell>
+        <TableCell>{capitalizeWords(salary.location) || "N/A"}</TableCell>
+        <TableCell>
+          {salary.jobs?.length > 0
+            ? capitalizeWords(salary.jobs[0].title)
+            : "N/A"}
+        </TableCell>
+        <TableCell>
+          {salary.gross_salary !== null ? salary.gross_salary : "N/A"}
+        </TableCell>
+        <TableCell>
+          {salary.net_salary !== null ? salary.net_salary : "N/A"}
+        </TableCell>
+        <TableCell>
+          {salary.variables !== null ? salary.variables : "N/A"}
+        </TableCell>
+        <TableCell>{capitalizeWords(salary.level) || "N/A"}</TableCell>
+        <TableCell>{capitalizeWords(salary.work_type) || "N/A"}</TableCell>
+        <TableCell>
+          {salary.experience_years_company !== null
+            ? salary.experience_years_company
+            : "N/A"}
+        </TableCell>
+        <TableCell>
+          {salary.total_experience_years !== null
+            ? salary.total_experience_years
+            : "N/A"}
+        </TableCell>
+        <TableCell>{capitalizeWords(salary.company?.type) || "N/A"}</TableCell>
+        <TableCell>
+          {salary.technical_stacks?.length > 0 ? (
+            <OverlayTrigger
+              placement="right"
+              overlay={
+                <Tooltip id={`tooltip-technical-stacks-${salary.id}`}>
+                  {salary.technical_stacks
+                    ?.map((stack) => capitalizeWords(stack.name))
+                    .join(", ")}
+                </Tooltip>
+              }
+            >
+              <span>
+                {salary.technical_stacks
+                  ?.slice(0, 2)
+                  .map((stack) => capitalizeWords(stack.name))
+                  .join(", ")}
+                {salary.technical_stacks?.length > 2 && "..."}
+              </span>
+            </OverlayTrigger>
+          ) : (
+            "N/A"
+          )}
+        </TableCell>
+        <TableCell>
+          {salary.company?.tags && salary.company.tags.length > 0 ? (
+            <OverlayTrigger
+              placement="right"
+              overlay={
+                <Tooltip id={`tooltip-tags-${salary.id}`}>
+                  {salary.company.tags
+                    .map((tag) => capitalizeWords(tag.name))
+                    .join(", ")}
+                </Tooltip>
+              }
+            >
+              <span>
+                {salary.company?.tags
+                  ?.slice(0, 1)
+                  .map((tag) => capitalizeWords(tag.name))
+                  .join(", ")}
+                {salary.company?.tags?.length > 1 && "..."}
+              </span>
+            </OverlayTrigger>
+          ) : (
+            "N/A"
+          )}
+        </TableCell>
+        <TableCell>{capitalizeWords(salary.gender) || "N/A"}</TableCell>
+        <TableCell>{salary.added_date || "N/A"}</TableCell>
+        <TableCell>
+          {salary.leave_days !== null ? salary.leave_days : "N/A"}
+        </TableCell>
+        <StickyCell right="0">
+          <Button
+            variant="info"
+            size="sm"
+            onClick={() => handleShowDetails(salary)}
+          >
+            Details
+          </Button>
+        </StickyCell>
+      </tr>
+    );
+  };
+
+  const [selectedSalary, setSelectedSalary] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  const handleShowDetails = (salary) => {
+    setSelectedSalary(salary);
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseDetails = () => {
+    setShowDetailsModal(false);
   };
 
   return (
@@ -462,51 +616,53 @@ const SalaryListPage = () => {
         </Row>
       )}
 
-      <div className="mb-3 text-start ps-3 d-flex align-items-center">
-        <Button
-          variant="primary"
-          onClick={handleOpenAddSalaryModal}
-          className="me-2"
-        >
-          Add New Salary
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => setShowFilterModal(true)}
-          className="me-2"
-        >
-          Open Filters
-        </Button>
-        <Dropdown as={ButtonGroup} className="me-2">
-          <Button variant="secondary">Show Results: {itemsPerPage}</Button>
-          <Dropdown.Toggle
-            split
-            variant="secondary"
-            id="dropdown-split-basic"
-          />
-          <Dropdown.Menu>
-            {[10, 25, 50, 100].map((num) => (
-              <Dropdown.Item
-                key={num}
-                onClick={() => handleItemsPerPageChange(num)}
+      <Container fluid className="px-3 mb-3">
+        <Row className="gy-2 justify-content-start align-items-center">
+          <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-3">
+            <Button variant="primary" onClick={handleOpenAddSalaryModal}>
+              Add Salary
+            </Button>
+          </Col>
+          <Col xs="auto" className="mb-2 mb-sm-0">
+            <Button variant="primary" onClick={() => setShowFilterModal(true)}>
+              Filters
+            </Button>
+          </Col>
+          <Col xs="auto" className="mb-2 mb-sm-0">
+            <Dropdown as={ButtonGroup}>
+              <Button variant="primary">Show: {itemsPerPage}</Button>
+              <Dropdown.Toggle
+                split
+                variant="primary"
+                id="dropdown-split-basic"
+              />
+              <Dropdown.Menu>
+                {[10, 25, 50, 100].map((num) => (
+                  <Dropdown.Item
+                    key={num}
+                    onClick={() => handleItemsPerPageChange(num)}
+                  >
+                    {num}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+          </Col>
+          <Col xs="auto">
+            <ButtonGroup>
+              <Button onClick={handlePrevPage} disabled={currentPage === 1}>
+                &lt;
+              </Button>
+              <Button
+                onClick={handleNextPage}
+                disabled={currentPage * itemsPerPage >= totalItems}
               >
-                {num}
-              </Dropdown.Item>
-            ))}
-          </Dropdown.Menu>
-        </Dropdown>
-        <ButtonGroup>
-          <Button onClick={handlePrevPage} disabled={currentPage === 1}>
-            &lt; Previous
-          </Button>
-          <Button
-            onClick={handleNextPage}
-            disabled={currentPage * itemsPerPage >= totalItems}
-          >
-            Next &gt;
-          </Button>
-        </ButtonGroup>
-      </div>
+                &gt;
+              </Button>
+            </ButtonGroup>
+          </Col>
+        </Row>
+      </Container>
 
       <AddSalaryForm
         show={showAddSalaryModal}
@@ -790,159 +946,161 @@ const SalaryListPage = () => {
         </Modal.Body>
       </Modal>
 
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <SortableHeader column="company_name" label="Company" />
-            <th>Tags</th>
-            <th>Company Type</th>
-            <th>Job Titles</th>
-            <th>Technical Stacks</th>
-            <SortableHeader column="location" label="Location" />
-            <SortableHeader column="net_salary" label="Net Salary" />
-            <SortableHeader column="gross_salary" label="Gross Salary" />
-            <SortableHeader column="variables" label="Variables" />
-            <th>Gender</th>
-            <SortableHeader
-              column="experience_years_company"
-              label="Company Experience"
-            />
-            <SortableHeader
-              column="total_experience_years"
-              label="Total Experience"
-            />
-            <th>Level</th>
-            <th>Work Type</th>
-            <SortableHeader column="added_date" label="Added Date" />
-            <SortableHeader column="leave_days" label="Leave Days" />
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading ? (
+      {isLoading && (
+        <LoadingOverlay>
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </LoadingOverlay>
+      )}
+
+      <ScrollableWrapper>
+        <StyledTable striped bordered hover>
+          <thead>
             <tr>
-              <td colSpan="16">
-                <div className="d-flex justify-content-center">
-                  <div className="spinner-border" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-              </td>
+              <StickyCell as="th" left="0">
+                Company
+              </StickyCell>
+              <SortableHeader column="location" label="Location" />
+              <th>Job Title</th>
+              <SortableHeader column="gross_salary" label="Gross Salary" />
+              <SortableHeader column="net_salary" label="Net Salary" />
+              <SortableHeader column="variables" label="Variables" />
+              <th>Level</th>
+              <th>Work Type</th>
+              <SortableHeader
+                column="experience_years_company"
+                label="Company Exp"
+              />
+              <SortableHeader
+                column="total_experience_years"
+                label="Total Exp"
+              />
+              <th>Company Type</th>
+              <th>Tech Stacks</th>
+              <th>Tags</th>
+              <th>Gender</th>
+              <SortableHeader column="added_date" label="Added Date" />
+              <SortableHeader column="leave_days" label="Leave Days" />
+              <StickyCell as="th" right="0">
+                Actions
+              </StickyCell>
             </tr>
-          ) : error ? (
-            <tr>
-              <td colSpan="16">{error}</td>
-            </tr>
-          ) : salaries.length > 0 ? (
-            salaries.map((salary) => (
-              <tr key={salary.id}>
-                <td>{salary.company?.name || "N/A"}</td>
-                <td>
-                  {salary.company?.tags && salary.company.tags.length > 0 ? (
-                    <OverlayTrigger
-                      placement="right"
-                      overlay={
-                        <Tooltip id={`tooltip-tags-${salary.id}`}>
-                          {salary.company.tags
-                            .map((tag) => capitalizeWords(tag.name))
-                            .join(", ")}
-                        </Tooltip>
-                      }
-                    >
-                      <span>
-                        {salary.company?.tags
-                          ?.slice(0, 2)
-                          .map((tag) => capitalizeWords(tag.name))
-                          .join(", ")}
-                        {salary.company?.tags?.length > 2 && "..."}
-                      </span>
-                    </OverlayTrigger>
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
-                <td>{capitalizeWords(salary.company?.type) || "N/A"}</td>
-                <td>
-                  {salary.jobs?.length > 0 ? (
-                    <OverlayTrigger
-                      placement="right"
-                      overlay={
-                        <Tooltip id={`tooltip-jobs-${salary.id}`}>
-                          {salary.jobs
-                            .map((job) => capitalizeWords(job.title))
-                            .join(", ")}
-                        </Tooltip>
-                      }
-                    >
-                      <span>
-                        {salary.jobs
-                          ?.slice(0, 2)
-                          .map((job) => capitalizeWords(job.title))
-                          .join(", ")}
-                        {salary.jobs?.length > 2 && "..."}
-                      </span>
-                    </OverlayTrigger>
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
-                <td>
-                  {salary.technical_stacks?.length > 0 ? (
-                    <OverlayTrigger
-                      placement="right"
-                      overlay={
-                        <Tooltip id={`tooltip-technical-stacks-${salary.id}`}>
-                          {salary.technical_stacks
-                            ?.map((stack) => capitalizeWords(stack.name))
-                            .join(", ")}
-                        </Tooltip>
-                      }
-                    >
-                      <span>
-                        {salary.technical_stacks
-                          ?.slice(0, 3)
-                          .map((stack) => capitalizeWords(stack.name))
-                          .join(", ")}
-                        {salary.technical_stacks?.length > 3 && "..."}
-                      </span>
-                    </OverlayTrigger>
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
-                <td>{capitalizeWords(salary.location) || "N/A"}</td>
-                <td>
-                  {salary.net_salary !== null ? salary.net_salary : "N/A"}
-                </td>
-                <td>
-                  {salary.gross_salary !== null ? salary.gross_salary : "N/A"}
-                </td>
-                <td>{salary.variables !== null ? salary.variables : "N/A"}</td>
-                <td>{capitalizeWords(salary.gender) || "N/A"}</td>
-                <td>
-                  {salary.experience_years_company !== null
-                    ? salary.experience_years_company
-                    : "N/A"}
-                </td>
-                <td>
-                  {salary.total_experience_years !== null
-                    ? salary.total_experience_years
-                    : "N/A"}
-                </td>
-                <td>{capitalizeWords(salary.level) || "N/A"}</td>
-                <td>{capitalizeWords(salary.work_type) || "N/A"}</td>
-                <td>{salary.added_date || "N/A"}</td>
-                <td>
-                  {salary.leave_days !== null ? salary.leave_days : "N/A"}
-                </td>
+          </thead>
+          <tbody>
+            {error ? (
+              <tr>
+                <td colSpan="17">{error}</td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="15">No salaries found</td>
-            </tr>
+            ) : salaries.length > 0 ? (
+              salaries.map(renderSalaryRow)
+            ) : (
+              <tr>
+                <td colSpan="17">No salaries found</td>
+              </tr>
+            )}
+          </tbody>
+        </StyledTable>
+      </ScrollableWrapper>
+
+      <Modal show={showDetailsModal} onHide={handleCloseDetails}>
+        <Modal.Header closeButton>
+          <Modal.Title>Salary Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedSalary && (
+            <div>
+              <p>
+                <strong>Company:</strong>{" "}
+                {selectedSalary.company?.name || "N/A"}
+              </p>
+              <p>
+                <strong>Tags:</strong>{" "}
+                {selectedSalary.company?.tags
+                  ?.map((tag) => capitalizeWords(tag.name))
+                  .join(", ") || "N/A"}
+              </p>
+              <p>
+                <strong>Company Type:</strong>{" "}
+                {capitalizeWords(selectedSalary.company?.type) || "N/A"}
+              </p>
+              <p>
+                <strong>Job Titles:</strong>{" "}
+                {selectedSalary.jobs
+                  ?.map((job) => capitalizeWords(job.title))
+                  .join(", ") || "N/A"}
+              </p>
+              <p>
+                <strong>Technical Stacks:</strong>{" "}
+                {selectedSalary.technical_stacks
+                  ?.map((stack) => capitalizeWords(stack.name))
+                  .join(", ") || "N/A"}
+              </p>
+              <p>
+                <strong>Location:</strong>{" "}
+                {capitalizeWords(selectedSalary.location) || "N/A"}
+              </p>
+              <p>
+                <strong>Net Salary:</strong>{" "}
+                {selectedSalary.net_salary !== null
+                  ? selectedSalary.net_salary
+                  : "N/A"}
+              </p>
+              <p>
+                <strong>Gross Salary:</strong>{" "}
+                {selectedSalary.gross_salary !== null
+                  ? selectedSalary.gross_salary
+                  : "N/A"}
+              </p>
+              <p>
+                <strong>Variables:</strong>{" "}
+                {selectedSalary.variables !== null
+                  ? selectedSalary.variables
+                  : "N/A"}
+              </p>
+              <p>
+                <strong>Gender:</strong>{" "}
+                {capitalizeWords(selectedSalary.gender) || "N/A"}
+              </p>
+              <p>
+                <strong>Company Experience:</strong>{" "}
+                {selectedSalary.experience_years_company !== null
+                  ? selectedSalary.experience_years_company
+                  : "N/A"}
+              </p>
+              <p>
+                <strong>Total Experience:</strong>{" "}
+                {selectedSalary.total_experience_years !== null
+                  ? selectedSalary.total_experience_years
+                  : "N/A"}
+              </p>
+              <p>
+                <strong>Level:</strong>{" "}
+                {capitalizeWords(selectedSalary.level) || "N/A"}
+              </p>
+              <p>
+                <strong>Work Type:</strong>{" "}
+                {capitalizeWords(selectedSalary.work_type) || "N/A"}
+              </p>
+              <p>
+                <strong>Added Date:</strong>{" "}
+                {selectedSalary.added_date || "N/A"}
+              </p>
+              <p>
+                <strong>Leave Days:</strong>{" "}
+                {selectedSalary.leave_days !== null
+                  ? selectedSalary.leave_days
+                  : "N/A"}
+              </p>
+            </div>
           )}
-        </tbody>
-      </Table>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseDetails}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
