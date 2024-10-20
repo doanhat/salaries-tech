@@ -24,7 +24,21 @@ env:
   SQLALCHEMY_DATABASE_URL: ${{ secrets.SQLALCHEMY_DATABASE_URL }}
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Cloud SDK
+      if: github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_frontend == 'true'
+      uses: google-github-actions/setup-gcloud@v0.2.0
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+
   backend:
+    needs: setup
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -46,14 +60,6 @@ jobs:
     - name: Run tests
       run: make test
 
-    - name: Set up Cloud SDK
-      if: github.event.inputs.deploy_backend == 'true'
-      uses: google-github-actions/setup-gcloud@v0.2.0
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        export_default_credentials: true
-
     - name: Deploy Backend and Set URL
       if: github.event.inputs.deploy_backend == 'true'
       run: |
@@ -61,6 +67,7 @@ jobs:
         make deploy-backend SQLALCHEMY_DATABASE_URL=${{ secrets.SQLALCHEMY_DATABASE_URL }}
 
   frontend:
+    needs: setup
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -71,13 +78,20 @@ jobs:
         node-version: '18'
 
     - name: Install dependencies
+      working-directory: ./frontend
       run: npm ci
 
     - name: Run lint
+      working-directory: ./frontend
       run: npm run lint
 
     - name: Run tests
-      run: npm test
+      working-directory: ./frontend
+      run: npm test -- --watchAll=false
+
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
 
     - name: Install Firebase CLI
       if: github.event.inputs.deploy_frontend == 'true'
