@@ -3,6 +3,7 @@ import urllib.parse
 import uuid
 from contextlib import contextmanager
 from datetime import date
+from unittest.mock import patch, MagicMock
 
 import pytest
 import requests
@@ -21,7 +22,7 @@ from tests.test_database import (
 
 from backend.api.database import get_db_session
 from backend.api.main import app
-from backend.api.models import CompanyDB, JobDB, SalaryDB, TagDB
+from backend.api.models import CompanyDB, JobDB, SalaryDB, TagDB, TechnicalStackDB
 
 
 @pytest.fixture(scope="function")
@@ -48,6 +49,11 @@ def sample_salary(test_db):
     # Create a job
     job = JobDB(title="Software Engineer")
     test_db.add(job)
+    test_db.flush()
+
+    # Create a technical stack
+    technical_stack = TechnicalStackDB(name="Python")
+    test_db.add(technical_stack)
     test_db.flush()
 
     # Create a salary
@@ -79,15 +85,24 @@ def test_read_main(client):
 
 
 def test_create_salary(client: TestClient, monkeypatch):
-    # Mock the CAPTCHA verification (if you're using it)
-    def mock_post(*args, **kwargs):
-        class MockResponse:
-            def json(self):
-                return {"success": True}
+    # Mock the reCAPTCHA verification
+    class MockAssessment:
+        class TokenProperties:
+            valid = True
 
-        return MockResponse()
+        class RiskAnalysis:
+            score = 0.9
 
-    monkeypatch.setattr("requests.post", mock_post)
+        token_properties = TokenProperties()
+        risk_analysis = RiskAnalysis()
+
+    def mock_create_assessment(*args, **kwargs):
+        return MockAssessment()
+
+    monkeypatch.setattr(
+        "google.cloud.recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.create_assessment",
+        mock_create_assessment,
+    )
 
     # Prepare the salary data
     salary_data = {
@@ -111,13 +126,30 @@ def test_create_salary(client: TestClient, monkeypatch):
     salary_json = json.dumps(salary_data)
 
     # Prepare the form data
-    form_data = {"salary": salary_json, "captcha_token": "test_token"}
+    form_data = {
+        "salary": salary_json,
+        "captcha_token": "test_token",
+        "user_agent": "test_user_agent",
+    }
 
-    # Make the request
-    response = client.post(
-        "/salaries/",
-        data=form_data,
-    )
+    # Mock the Google Cloud client
+    mock_client = MagicMock()
+    mock_client.create_assessment.return_value = MockAssessment()
+
+    # Mock the environment variables and Google Cloud client
+    with patch.dict(
+        "os.environ",
+        {
+            "PROJECT_ID": "test_project_id",
+            "RECAPTCHA_KEY": "test_recaptcha_key",
+            "TESTING": "true",
+        },
+    ), patch("google.cloud.recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient", return_value=mock_client):
+        # Make the request
+        response = client.post(
+            "/salaries/",
+            data=form_data,
+        )
 
     # Print response content for debugging
     print(f"Response status code: {response.status_code}")
@@ -126,13 +158,55 @@ def test_create_salary(client: TestClient, monkeypatch):
     # Assert that the response is successful
     assert response.status_code == 200
 
-    # If the response is successful, you can add more assertions to check the response data
+    # If the response is successful, check the response data
     if response.status_code == 200:
         response_data = response.json()
         assert "id" in response_data
         assert response_data["gender"] == salary_data["gender"]
         assert response_data["level"] == salary_data["level"]
-        # Add more assertions as needed
+        assert response_data["gross_salary"] == salary_data["gross_salary"]
+        assert response_data["work_type"] == salary_data["work_type"]
+        assert response_data["net_salary"] == salary_data["net_salary"]
+        assert response_data["location"].lower() == salary_data["location"].lower()
+        assert response_data["variables"] == salary_data["variables"]
+        assert (
+            response_data["total_experience_years"]
+            == salary_data["total_experience_years"]
+        )
+        assert response_data["leave_days"] == salary_data["leave_days"]
+        assert (
+            response_data["experience_years_company"]
+            == salary_data["experience_years_company"]
+        )
+
+        # Check that company, jobs, and technical_stacks are empty or null in the initial response
+        assert (
+            response_data["company"]["name"].lower()
+            == salary_data["company"]["name"].lower()
+        )
+        assert response_data["company"]["type"] == salary_data["company"]["type"]
+        assert len(response_data["company"]["tags"]) == len(
+            salary_data["company"]["tags"]
+        )
+        assert (
+            response_data["jobs"][0]["title"].lower()
+            == salary_data["jobs"][0]["title"].lower()
+        )
+        assert (
+            response_data["technical_stacks"][0]["name"].lower()
+            == salary_data["technical_stacks"][0]["name"].lower()
+        )
+
+    # Verify that the salary was actually created in the database
+    get_response = client.get("/salaries/")
+    assert get_response.status_code == 200
+    get_data = get_response.json()
+    assert get_data["total"] > 0
+    assert any(s["id"] == response_data["id"] for s in get_data["results"])
+
+    # Clean up: delete the created salary
+    delete_response = client.delete(f"/salaries/?salary_ids={response_data['id']}")
+    assert delete_response.status_code == 200
 
 
 def test_get_salaries(client, sample_salary):
@@ -374,3 +448,4 @@ def test_error_handling(client):
     # Test deleting non-existent company
     response = client.delete("/companies/?company_ids=99999")
     assert response.status_code == 404
+

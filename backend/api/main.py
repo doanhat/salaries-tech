@@ -4,8 +4,11 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Query
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from google.cloud import recaptchaenterprise_v1
+from google.cloud.recaptchaenterprise_v1 import Assessment
 from pydantic import ValidationError
 from sqlalchemy import asc, delete, desc, func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -32,6 +35,7 @@ from .models import (
 )
 from .tools import capitalize_words
 
+load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -47,23 +51,67 @@ app.add_middleware(
 )
 
 
+def create_assessment(
+    project_id: str,
+    recaptcha_site_key: str,
+    token: str,
+    user_ip_address: Optional[str],
+    user_agent: Optional[str],
+) -> Assessment:
+    """Create an assessment to analyze the risk of a UI action."""
+    client = recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient()
+
+    event = recaptchaenterprise_v1.Event()
+    event.site_key = recaptcha_site_key
+    event.token = token
+    if user_ip_address:
+        event.user_ip_address = user_ip_address
+    if user_agent:
+        event.user_agent = user_agent
+
+    assessment = recaptchaenterprise_v1.Assessment()
+    assessment.event = event
+
+    project_name = f"projects/{project_id}"
+
+    request = recaptchaenterprise_v1.CreateAssessmentRequest()
+    request.assessment = assessment
+    request.parent = project_name
+
+    response = client.create_assessment(request)
+
+    return response
+
+
 @app.post("/salaries/", response_model=Salary)
 async def create_salary(
+    request: Request,
     salary: str = Form(...),
-    captcha_token: Optional[str] = Form(None),
+    captcha_token: str = Form(...),
+    user_agent: str = Form(...),
     db: Session = Depends(get_db_session),
 ) -> Salary:
     try:
+        # Verify reCAPTCHA
+        project_id = os.getenv("PROJECT_ID")
+        recaptcha_key = os.getenv("RECAPTCHA_KEY")
+        user_ip = request.client.host if request.client else None
+
+        if not project_id or not recaptcha_key:
+            raise HTTPException(status_code=500, detail="reCAPTCHA configuration error")
+
+        assessment = create_assessment(
+            project_id, recaptcha_key, captcha_token, user_ip, user_agent
+        )
+
+        if not assessment.token_properties.valid:
+            raise HTTPException(status_code=400, detail="Invalid reCAPTCHA")
+
+        if assessment.risk_analysis.score < 0.5:  # Adjust this threshold as needed
+            raise HTTPException(status_code=400, detail="reCAPTCHA verification failed")
+
         salary_data = json.loads(salary)
         salary_model = Salary.model_validate(salary_data)
-
-        # Verify CAPTCHA (uncomment if you're using CAPTCHA)
-        # recaptcha_secret = os.getenv("RECAPTCHA_SECRET_KEY")
-        # verify_url = f"https://www.google.com/recaptcha/api/siteverify?secret={recaptcha_secret}&response={captcha_token}"
-        # response = requests.post(verify_url)
-        # result = response.json()
-        # if not result["success"]:
-        #     raise HTTPException(status_code=400, detail="CAPTCHA verification failed")
 
         salary_dict = salary_model.model_dump(
             exclude={"company", "jobs", "technical_stacks"}
@@ -136,10 +184,35 @@ async def create_salary(
 
         db.commit()
         db.refresh(db_salary)
-
-        return Salary(
+        created_salary = Salary(
             **{c.name: getattr(db_salary, c.name) for c in db_salary.__table__.columns}
         )
+        if db_salary.company:
+            created_salary.company = Company(
+                **{
+                    c.name: getattr(db_salary.company, c.name)
+                    for c in db_salary.company.__table__.columns
+                }
+            )
+            if db_salary.company.tags:
+                created_salary.company.tags = [
+                    Tag(**{t.name: getattr(tag, t.name) for t in tag.__table__.columns})
+                    for tag in db_salary.company.tags
+                ]
+        if db_salary.jobs:
+            created_salary.jobs = [
+                Job(**{j.name: getattr(job, j.name) for j in job.__table__.columns})
+                for job in db_salary.jobs
+            ]
+        if db_salary.technical_stacks:
+            created_salary.technical_stacks = [
+                TechnicalStack(
+                    **{t.name: getattr(stack, t.name) for t in stack.__table__.columns}
+                )
+                for stack in db_salary.technical_stacks
+            ]
+        print(created_salary)
+        return created_salary
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=e.errors())
     except Exception as e:

@@ -233,9 +233,9 @@ const SalaryListPage = () => {
     setShowAddSalaryModal(false);
   };
 
-  const handleSalaryAdded = async (newSalary) => {
+  const handleSalaryAdded = async (newSalary, captchaToken) => {
     try {
-      const response = await addSalary(newSalary);
+      const response = await addSalary(newSalary, captchaToken);
       console.log("Salary added successfully:", response);
       setSuccessMessage("Salary added successfully!");
       setShowAddSalaryModal(false);

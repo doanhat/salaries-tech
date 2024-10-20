@@ -3,6 +3,8 @@ import axios from "axios";
 export const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
 
+export const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
+
 export const getSalaryStats = async () => {
   const response = await fetch(`${API_BASE_URL}/salaries/stats/`, {
     credentials: "include",
@@ -74,7 +76,7 @@ export const getSalaries = async (
   };
 };
 
-export const addSalary = async (salaryData) => {
+export const addSalary = async (salaryData, captchaToken, userAgent) => {
   try {
     // Format the data
     const formattedData = {
@@ -117,8 +119,8 @@ export const addSalary = async (salaryData) => {
 
     const formData = new FormData();
     formData.append("salary", JSON.stringify(formattedData));
-    // If you're using CAPTCHA, uncomment the next line
-    // formData.append('captcha_token', captchaToken);
+    formData.append("captcha_token", captchaToken);
+    formData.append("user_agent", userAgent);
 
     console.log("Data being sent to backend:", formattedData);
     const response = await fetch(`${API_BASE_URL}/salaries/`, {

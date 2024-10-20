@@ -103,19 +103,24 @@ deploy-backend: build-and-push
 		--region $(REGION) \
 		--allow-unauthenticated \
 		--set-env-vars PROJECT_ID=$(PROJECT_ID) \
+		--set-env-vars RECAPTCHA_KEY=$(shell if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
 		--set-env-vars ALLOWED_ORIGINS=$(shell if [ -n "$(ALLOWED_ORIGINS)" ]; then echo "$(ALLOWED_ORIGINS)"; else awk -F "=" "/ALLOWED_ORIGINS/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
 		--set-env-vars SQLALCHEMY_DATABASE_URL=$(shell if [ -n "$(SQLALCHEMY_DATABASE_URL)" ]; then echo "$(SQLALCHEMY_DATABASE_URL)"; else awk -F "=" "/SQLALCHEMY_DATABASE_URL/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi)
 
 
-set-backend-url:
+set-frontend-env:
 	@CLOUD_RUN_URL=$$(gcloud run services describe $(IMAGE_NAME) --region $(REGION) --format='value(status.url)') && \
+	RECAPTCHA_KEY=$$(if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) && \
 	if [ ! -f frontend/.env ]; then \
 		echo "REACT_APP_API_BASE_URL=" > frontend/.env; \
+		echo "REACT_APP_RECAPTCHA_SITE_KEY=" >> frontend/.env; \
 	fi && \
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$$CLOUD_RUN_URL"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$$RECAPTCHA_KEY"'|' frontend/.env; \
 	else \
 		sed -i 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$$CLOUD_RUN_URL"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$$RECAPTCHA_KEY"'|' frontend/.env; \
 	fi
 
 FIREBASE_SITE_NAME := salaries-tech
@@ -133,25 +138,35 @@ deploy-frontend:
 	firebase target:apply hosting $$SITE_NAME $$SITE_NAME && \
 	firebase deploy --only hosting:$$SITE_NAME
 	
-set-frontend-url:
+set-backend-env:
 	@if [ ! -f backend/api/.env ]; then \
 		echo "ALLOWED_ORIGINS=" > backend/api/.env; \
+		echo "PROJECT_ID=" >> backend/api/.env; \
+		echo "RECAPTCHA_KEY=" >> backend/api/.env; \
 	fi && \
 	SITE_NAME=$${FIREBASE_SITE_NAME:-$(FIREBASE_SITE_NAME)} && \
 	FIREBASE_URL="https://$$SITE_NAME.web.app" && \
+	PROJECT_ID=$$(if [ -n "$(PROJECT_ID)" ]; then echo "$(PROJECT_ID)"; else awk -F "=" "/PROJECT_ID/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) && \
+	RECAPTCHA_KEY=$$(if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) && \
 	echo "Firebase URL: $$FIREBASE_URL" && \
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$$FIREBASE_URL"'|' backend/api/.env; \
+		sed -i '' 's|^PROJECT_ID=.*|PROJECT_ID='"$$PROJECT_ID"'|' backend/api/.env; \
+		sed -i '' 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$$RECAPTCHA_KEY"'|' backend/api/.env; \
 	else \
 		sed -i 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$$FIREBASE_URL"'|' backend/api/.env; \
+		sed -i 's|^PROJECT_ID=.*|PROJECT_ID='"$$PROJECT_ID"'|' backend/api/.env; \
+		sed -i 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$$RECAPTCHA_KEY"'|' backend/api/.env; \
 	fi
 
 # Update Cloud Run with new ALLOWED_ORIGINS
-update-backend-env: set-backend-url set-frontend-url
+update-backend-env: set-backend-env set-frontend-env
 	gcloud run services update $(IMAGE_NAME) \
 		--region $(REGION) \
 		--set-env-vars ALLOWED_ORIGINS=$(shell if [ -n "$(ALLOWED_ORIGINS)" ]; then echo "$(ALLOWED_ORIGINS)"; else awk -F "=" "/ALLOWED_ORIGINS/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
-		--set-env-vars SQLALCHEMY_DATABASE_URL=$(shell if [ -n "$(SQLALCHEMY_DATABASE_URL)" ]; then echo "$(SQLALCHEMY_DATABASE_URL)"; else awk -F "=" "/SQLALCHEMY_DATABASE_URL/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi)
+		--set-env-vars SQLALCHEMY_DATABASE_URL=$(shell if [ -n "$(SQLALCHEMY_DATABASE_URL)" ]; then echo "$(SQLALCHEMY_DATABASE_URL)"; else awk -F "=" "/SQLALCHEMY_DATABASE_URL/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
+		--set-env-vars PROJECT_ID=$(shell if [ -n "$(PROJECT_ID)" ]; then echo "$(PROJECT_ID)"; else awk -F "=" "/PROJECT_ID/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
+		--set-env-vars RECAPTCHA_KEY=$(shell if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi)
 
 
 .PHONY: cleanup

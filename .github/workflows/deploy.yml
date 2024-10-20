@@ -57,7 +57,7 @@ jobs:
     - name: Deploy Backend and Set URL
       if: github.event.inputs.deploy_backend == 'true'
       run: |
-        make set-frontend-url
+        make set-backend-env PROJECT_ID=${{ secrets.GCP_PROJECT_ID }} RECAPTCHA_KEY=${{ secrets.RECAPTCHA_KEY }}
         make deploy-backend SQLALCHEMY_DATABASE_URL=${{ secrets.SQLALCHEMY_DATABASE_URL }}
 
   frontend:
@@ -103,5 +103,5 @@ jobs:
       env:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
       run: |
-        make set-backend-url
+        make set-frontend-env RECAPTCHA_KEY=${{ secrets.RECAPTCHA_KEY }}
         make deploy-frontend

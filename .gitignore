@@ -133,3 +133,6 @@ ENV/
 .install
 
 salaries-*-*.json
+*.db-shm
+backend/test.db
+

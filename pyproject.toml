@@ -21,6 +21,7 @@ psycopg2-binary = "^2.9.9"
 libsql-experimental = "^0.0.41"
 sqlalchemy-libsql = "^0.1.0"
 tenacity = "^9.0.0"
+google-cloud-recaptcha-enterprise = "^1.22.1"
 
 
 [tool.poetry.group.dev.dependencies]

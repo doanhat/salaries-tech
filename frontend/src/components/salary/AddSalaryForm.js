@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
 import Select from "react-select";
 import CreatableSelect from "react-select/creatable";
-// import ReCAPTCHA from "react-google-recaptcha";
+import ReCAPTCHA from "react-google-recaptcha";
 import {
   checkCompany as checkCompanyName,
   checkCompanyTag,
   checkLocation,
   checkJobTitle,
   checkTechnicalStack,
+  RECAPTCHA_SITE_KEY,
 } from "../../utils/api";
 import { capitalizeWords } from "../../utils/stringUtils";
 
@@ -34,7 +35,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isNewCompany, setIsNewCompany] = useState(false);
-  // const [captchaValue, setCaptchaValue] = useState(null);
+  const [captchaToken, setCaptchaToken] = useState(null);
 
   useEffect(() => {
     if (show) {
@@ -132,12 +133,17 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
     setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
+  const handleReCaptchaChange = (token) => {
+    setCaptchaToken(token);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // if (!captchaValue) {
-    //   setErrors({ ...errors, submit: "Please complete the CAPTCHA" });
-    //   return;
-    // }
+    if (!captchaToken) {
+      setErrors({ ...errors, submit: "Please complete the reCAPTCHA" });
+      return;
+    }
+
     const newErrors = {};
     if (!formData.location) newErrors.location = "Location is required";
     if (!formData.gross_salary)
@@ -155,22 +161,15 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
     }
 
     try {
-      await onSalaryAdded(formData);
-      // Reset the form
+      await onSalaryAdded(formData, captchaToken, navigator.userAgent);
       setFormData(initialFormData);
+      setCaptchaToken(null);
       handleClose();
     } catch (error) {
       console.error("Error adding salary:", error);
       setErrors({ submit: "Failed to add salary. Please try again." });
     }
   };
-
-  // const handleCaptchaChange = (value) => {
-  //   setCaptchaValue(value);
-  //   if (value) {
-  //     setErrors({ ...errors, submit: null });
-  //   }
-  // };
 
   const createOption = (label, preserveCase = false) => ({
     label: preserveCase ? label : capitalizeWords(label),
@@ -491,22 +490,22 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
             </Col>
           </Row>
 
-          {/* <Row className="mb-3">
-            <Col>
-              <ReCAPTCHA
-                sitekey="YOUR_RECAPTCHA_SITE_KEY"
-                onChange={handleCaptchaChange}
-              />
-            </Col>
-          </Row> */}
+          <Form.Group className="mb-3">
+            <ReCAPTCHA
+              sitekey={RECAPTCHA_SITE_KEY}
+              onChange={handleReCaptchaChange}
+            />
+          </Form.Group>
 
           {errors.submit && <Alert variant="danger">{errors.submit}</Alert>}
 
-          {/* <Button variant="primary" type="submit" disabled={Object.values(errors).some(error => error !== null) || !captchaValue}>   */}
           <Button
             variant="primary"
             type="submit"
-            disabled={Object.values(errors).some((error) => error !== null)}
+            disabled={
+              !captchaToken ||
+              Object.values(errors).some((error) => error !== null)
+            }
           >
             Submit
           </Button>
