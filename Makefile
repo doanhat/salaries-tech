@@ -1,9 +1,18 @@
 PACKAGE := backend/api
 PACKAGES := $(PACKAGE) backend/tests
 FAILURES := .pytest_cache/v/cache/lastfailed
-install: .install .cache ## Install project dependencies
+# Variables
+PROJECT_ID := salaries-438922
+IMAGE_NAME := salary-backend
+GCR_IMAGE := gcr.io/$(PROJECT_ID)/$(IMAGE_NAME)
+REGION := europe-west1  # Default region, can be overridden in .env
+CAPTCHA_KEY := 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI # Google public site key for testing
+LOCAL_BACKEND_URL := http://localhost:8000
+LOCAL_FRONTEND_URL := http://localhost:3000
 
-.install: poetry.lock
+install-backend: .install-backend .cache ## Install project dependencies
+
+.install-backend: poetry.lock
 	poetry install
 	poetry check
 	@touch $@
@@ -16,7 +25,7 @@ poetry.lock: pyproject.toml
 	@mkdir -p .cache
 
 .PHONY: requirements.txt
-requirements.txt: install ## Generate requirements.txt
+requirements.txt: install-backend ## Generate requirements.txt
 	@mkdir -p dist
 	@poetry export --without-hashes --without dev -f requirements.txt > dist/requirements.txt
 	@if [ "$$(uname)" = "Darwin" ]; then \
@@ -27,21 +36,26 @@ requirements.txt: install ## Generate requirements.txt
 
 
 .PHONY: check
-check: install ## Run linters and static analysis
+check: install-backend ## Run linters and static analysis
 	poetry run isort $(PACKAGES)
 	poetry run ruff format $(PACKAGES)
 	poetry run ruff check $(PACKAGE) --fix
 	poetry run mypy --show-error-codes --ignore-missing-imports --config-file pyproject.toml $(PACKAGE)
 
 .PHONY: test
-test: install ## Run unit tests
+test: install-backend ## Run unit tests
 	@if test -e $(FAILURES); then cd backend && poetry run pytest tests --last-failed --exitfirst; fi
 	@rm -rf $(FAILURES)
 	cd backend && poetry run pytest tests
+	
 
 .PHONY: sync
-sync: install ## Sync data from API
+sync: install-backend ## Sync data from API
 	python -m backend.sync.populate_db
+
+.PHONY: install-frontend
+install-frontend:
+	cd frontend && npm install
 
 .PHONY: lint-frontend
 lint-frontend:
@@ -51,35 +65,36 @@ lint-frontend:
 format-frontend: lint-frontend
 	cd frontend && npm run format
 
-# Variables
-PROJECT_ID := $(shell gcloud config get-value project)
-IMAGE_NAME := salary-backend
-GCR_IMAGE := gcr.io/$(PROJECT_ID)/$(IMAGE_NAME)
-REGION := europe-west1  # Default region, can be overridden in .env
 
-# Local development settings
-LOCAL_BACKEND_URL := http://localhost:8000
-LOCAL_FRONTEND_URL := http://localhost:3000
 
 # Targets for local development
 .PHONY: set-local-env
 set-local-env:
 	@echo "Setting local environment variables..."
 	if [ ! -f backend/api/.env ]; then \
-		touch backend/api/.env; \
+		echo "ALLOWED_ORIGINS=" > backend/api/.env; \
+		echo "PROJECT_ID=" >> backend/api/.env; \
+		echo "RECAPTCHA_KEY=" >> backend/api/.env; \
 	fi
 	if [ ! -f frontend/.env ]; then \
-		touch frontend/.env; \
+		echo "REACT_APP_API_BASE_URL=" > frontend/.env; \
+		echo "REACT_APP_RECAPTCHA_SITE_KEY=" >> frontend/.env; \
 	fi
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$(LOCAL_FRONTEND_URL)"'|' backend/api/.env; \
+		sed -i '' 's|^PROJECT_ID=.*|PROJECT_ID='"$(PROJECT_ID)"'|' backend/api/.env; \
+		sed -i '' 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$(CAPTCHA_KEY)"'|' backend/api/.env; \
 	else \
 		sed -i 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$(LOCAL_FRONTEND_URL)"'|' backend/api/.env; \
+		sed -i 's|^PROJECT_ID=.*|PROJECT_ID='"$(PROJECT_ID)"'|' backend/api/.env; \
+		sed -i 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$(CAPTCHA_KEY)"'|' backend/api/.env; \
 	fi
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(CAPTCHA_KEY)"'|' frontend/.env; \
 	else \
 		sed -i 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(CAPTCHA_KEY)"'|' frontend/.env; \
 	fi
 
 .PHONY: run-local

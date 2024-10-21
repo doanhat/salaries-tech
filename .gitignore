@@ -131,6 +131,7 @@ ENV/
 
 # Makefile artifacts
 .install
+.install-backend
 
 salaries-*-*.json
 *.db-shm
