@@ -3,7 +3,7 @@ import urllib.parse
 import uuid
 from contextlib import contextmanager
 from datetime import date
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -144,7 +144,10 @@ def test_create_salary(client: TestClient, monkeypatch):
             "RECAPTCHA_KEY": "test_recaptcha_key",
             "TESTING": "true",
         },
-    ), patch("google.cloud.recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient", return_value=mock_client):
+    ), patch(
+        "google.cloud.recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient",
+        return_value=mock_client,
+    ):
         # Make the request
         response = client.post(
             "/salaries/",
@@ -448,4 +451,3 @@ def test_error_handling(client):
     # Test deleting non-existent company
     response = client.delete("/companies/?company_ids=99999")
     assert response.status_code == 404
-
