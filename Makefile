@@ -64,6 +64,13 @@ LOCAL_FRONTEND_URL := http://localhost:3000
 # Targets for local development
 .PHONY: set-local-env
 set-local-env:
+	@echo "Setting local environment variables..."
+	if [ ! -f backend/api/.env ]; then \
+		touch backend/api/.env; \
+	fi
+	if [ ! -f frontend/.env ]; then \
+		touch frontend/.env; \
+	fi
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$(LOCAL_FRONTEND_URL)"'|' backend/api/.env; \
 	else \
