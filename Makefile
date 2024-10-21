@@ -53,6 +53,17 @@ test: install-backend ## Run unit tests
 sync: install-backend ## Sync data from API
 	python -m backend.sync.populate_db
 
+.PHONY: replace-db
+replace-db:
+	@echo "Replacing salaries.db with salaries_dev_data.db..."
+	@if [ -f backend/salaries_dev_data.db ]; then \
+		cp backend/salaries_dev_data.db backend/salaries.db && \
+		echo "Database replaced successfully."; \
+	else \
+		echo "Error: salaries_dev_data.db not found in backend/"; \
+		exit 1; \
+	fi
+
 .PHONY: install-frontend
 install-frontend:
 	cd frontend && npm install
@@ -98,7 +109,7 @@ set-local-env:
 	fi
 
 .PHONY: run-local
-run-local: set-local-env
+run-local: set-local-env replace-db
 	@echo "Starting backend and frontend..."
 	@trap 'kill %1; kill %2' SIGINT; \
 	(cd backend && poetry run uvicorn api.main:app --reload) & \

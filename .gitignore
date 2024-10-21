@@ -134,6 +134,7 @@ ENV/
 .install-backend
 
 salaries-*-*.json
+backend/salaries.db
 *.db-shm
+*.db-wal
 backend/test.db
-
