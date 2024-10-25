@@ -139,7 +139,7 @@ const SalaryListPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [locationStats, setLocationStats] = useState([]);
   const [topLocationsSalary, setTopLocationsSalary] = useState([]);
-  const [showCharts, setShowCharts] = useState(true); // Set to true by default
+  const [showCharts, setShowCharts] = useState(false); // Set to false by default
 
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
