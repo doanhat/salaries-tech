@@ -733,3 +733,88 @@ async def check_technical_stack(
 @app.get("/")
 async def read_root():
     return {"message": "Salary Information API"}
+
+
+@app.get("/salaries/location-stats/")
+async def get_location_stats(db: Session = Depends(get_db_session)):
+    try:
+        total_salaries = db.query(SalaryDB).count()
+        # Get all locations and their counts
+        location_counts = (
+            db.query(SalaryDB.location, func.count(SalaryDB.id))
+            .group_by(SalaryDB.location)
+            .all()
+        )
+
+        # Sort locations by count, descending
+        sorted_locations = sorted(location_counts, key=lambda x: x[1], reverse=True)
+
+        # Get top 10 locations
+        top_10 = sorted_locations[:10]
+
+        # Calculate the sum of all other locations
+        others_sum = sum(count for _, count in sorted_locations[10:])
+        others_locations = sorted_locations[
+            10:15
+        ]  # Get next 5 locations for "Others" tooltip
+
+        # Prepare the final data
+        chart_data = [
+            {
+                "name": location,
+                "value": count,
+                "percentage": count / total_salaries * 100,
+                "tooltip": [f"{location}: {count}"],
+            }
+            for location, count in top_10
+        ]
+        if others_sum > 0:
+            chart_data.append(
+                {
+                    "name": "Others",
+                    "value": others_sum,
+                    "percentage": others_sum / total_salaries * 100,
+                    "tooltip": [f"{loc}: {count}" for loc, count in others_locations]
+                    + ["..."],
+                }
+            )
+
+        return {"chart_data": chart_data}
+    except Exception as e:
+        logger.error(f"Error in get_location_stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/salaries/top-locations-by-salary/")
+async def get_top_locations_by_salary(db: Session = Depends(get_db_session)):
+    try:
+        # Query to get top 10 locations by average salary
+        top_locations = (
+            db.query(
+                SalaryDB.location,
+                func.avg(SalaryDB.gross_salary).label("average_salary"),
+                func.count(SalaryDB.id).label("count"),
+            )
+            .group_by(SalaryDB.location)
+            .having(
+                func.count(SalaryDB.id) >= 5
+            )  # Only include locations with at least 5 entries
+            .order_by(func.avg(SalaryDB.gross_salary).desc())
+            .limit(10)
+            .all()
+        )
+
+        # Prepare the data for the frontend
+        result = [
+            {
+                "name": location,
+                "average_salary": round(average_salary, 2),
+                "count": count,
+            }
+            for location, average_salary, count in top_locations
+        ]
+
+        return result
+    except Exception as e:
+        logger.error(f"Error in get_top_locations_by_salary: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

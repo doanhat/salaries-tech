@@ -1,4 +1,5 @@
 import json
+import random
 import urllib.parse
 import uuid
 from contextlib import contextmanager
@@ -8,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 
 # Import the fixtures from test_database.py
@@ -22,7 +23,16 @@ from tests.test_database import (
 
 from backend.api.database import get_db_session
 from backend.api.main import app
-from backend.api.models import CompanyDB, JobDB, SalaryDB, TagDB, TechnicalStackDB
+from backend.api.models import (
+    CompanyDB,
+    CompanyType,
+    JobDB,
+    Level,
+    SalaryDB,
+    TagDB,
+    TechnicalStackDB,
+    WorkType,
+)
 
 
 @pytest.fixture(scope="function")
@@ -107,9 +117,9 @@ def test_create_salary(client: TestClient, monkeypatch):
     # Prepare the salary data
     salary_data = {
         "gender": "male",
-        "level": "junior",
+        "level": Level.JUNIOR.value,
         "gross_salary": 50000,
-        "work_type": "remote",
+        "work_type": WorkType.REMOTE.value,
         "net_salary": 40000,
         "technical_stacks": [{"name": "python"}, {"name": "fastapi"}],
         "added_date": "2024-10-19",
@@ -245,8 +255,8 @@ def test_delete_salaries(client, test_db):
         company_id=test_company.id,
         location="Test City",
         gross_salary=100000,
-        level="mid",
-        work_type="remote",
+        level=Level.MID.value,
+        work_type=WorkType.REMOTE.value,
     )
     test_salary.jobs.append(test_job)
     test_db.add(test_salary)
@@ -324,7 +334,7 @@ def test_create_and_get_company(client, test_db):
     unique_name = f"New Company {uuid.uuid4()}"
     create_data = {
         "name": unique_name,
-        "type": "startup",
+        "type": CompanyType.STARTUP.value,
         "tags": [{"name": "tech"}, {"name": "AI"}],
     }
     create_response = client.post("/companies/", json=create_data)
@@ -334,7 +344,7 @@ def test_create_and_get_company(client, test_db):
 
     created_company = create_response.json()
     assert created_company["name"] == unique_name
-    assert created_company["type"] == "startup"
+    assert created_company["type"] == CompanyType.STARTUP.value
     assert len(created_company["tags"]) == 2
 
     # Test getting the created company
@@ -451,3 +461,82 @@ def test_error_handling(client):
     # Test deleting non-existent company
     response = client.delete("/companies/?company_ids=99999")
     assert response.status_code == 404
+
+
+def test_get_location_stats(client, test_db):
+    # Create some test data
+    locations = ["New York", "San Francisco", "London", "Berlin", "Tokyo"]
+    for i, location in enumerate(locations):
+        for _ in range(i + 1):  # Create i+1 salaries for each location
+            salary = SalaryDB(
+                location=location,
+                gross_salary=50000,
+                net_salary=40000,
+                gender="male",
+                level=Level.JUNIOR.value,
+                work_type=WorkType.REMOTE.value,
+            )
+            test_db.add(salary)
+    test_db.commit()
+
+    response = client.get("/salaries/location-stats/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "chart_data" in data
+    chart_data = data["chart_data"]
+
+    # Check if the data is sorted correctly
+    assert len(chart_data) <= 11  # 10 top locations + possibly "Others"
+    if len(chart_data) == 11:
+        assert chart_data[-1]["name"] == "Others"
+
+    # Check if percentages sum up to approximately 100%
+    total_percentage = sum(item["percentage"] for item in chart_data)
+    assert 99.9 <= total_percentage <= 100.1
+
+    # Check if the order is correct (descending by value)
+    values = [item["value"] for item in chart_data]
+    assert values == sorted(values, reverse=True)
+
+
+def test_get_top_locations_by_salary(client, test_db):
+    # Create some test data
+    locations = ["New York", "San Francisco", "London", "Berlin", "Tokyo"]
+    salaries = [80000, 90000, 70000, 75000, 85000]
+    for location, avg_salary in zip(locations, salaries):
+        for _ in range(5):  # Create 5 salaries for each location
+            salary = SalaryDB(
+                location=location,
+                gross_salary=avg_salary
+                + random.randint(-5000, 5000),  # Add some variation
+                net_salary=avg_salary * 0.8,
+                gender="male",
+                level="junior",
+                work_type="remote",
+            )
+            test_db.add(salary)
+    test_db.commit()
+
+    response = client.get("/salaries/top-locations-by-salary/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) <= 10  # Should return at most 10 locations
+    assert all(isinstance(item, dict) for item in data)
+    assert all(
+        {"name", "average_salary", "count"}.issubset(item.keys()) for item in data
+    )
+
+    # Check if the order is correct (descending by average_salary)
+    avg_salaries = [item["average_salary"] for item in data]
+    assert avg_salaries == sorted(avg_salaries, reverse=True)
+
+    # Check if all returned locations have at least 5 entries
+    assert all(item["count"] >= 5 for item in data)
+
+    # Verify the top location
+    top_location = data[0]
+    assert top_location["name"] == "San Francisco"
+    assert 85000 <= top_location["average_salary"] <= 95000

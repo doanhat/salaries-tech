@@ -12,10 +12,16 @@ const SalaryListPage = require("./SalaryListPage").default;
 jest.mock("../utils/api", () => ({
   getSalaries: jest.fn(),
   getChoices: jest.fn(),
-  getSalaryStats: jest.fn(),
+  getLocationStats: jest.fn(),
+  getTopLocationsByAverageSalary: jest.fn(),
 }));
 
-const { getSalaries, getChoices, getSalaryStats } = require("../utils/api");
+const {
+  getSalaries,
+  getChoices,
+  getLocationStats,
+  getTopLocationsByAverageSalary,
+} = require("../utils/api");
 
 describe("SalaryListPage", () => {
   beforeEach(() => {
@@ -33,7 +39,8 @@ describe("SalaryListPage", () => {
       levels: [],
       work_types: [],
     });
-    getSalaryStats.mockResolvedValue({});
+    getLocationStats.mockResolvedValue({});
+    getTopLocationsByAverageSalary.mockResolvedValue({});
   });
 
   test("renders SalaryListPage component", async () => {
@@ -49,7 +56,8 @@ describe("SalaryListPage", () => {
     await waitFor(() => {
       expect(getSalaries).toHaveBeenCalledTimes(1);
       expect(getChoices).toHaveBeenCalledTimes(1);
-      expect(getSalaryStats).toHaveBeenCalledTimes(1);
+      expect(getLocationStats).toHaveBeenCalledTimes(1);
+      expect(getTopLocationsByAverageSalary).toHaveBeenCalledTimes(1);
     });
   });
 });

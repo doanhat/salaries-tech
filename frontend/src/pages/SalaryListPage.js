@@ -18,12 +18,13 @@ import DatePicker from "react-datepicker";
 import {
   getSalaries,
   getChoices,
-  getSalaryStats,
   addSalary,
+  getLocationStats,
+  getTopLocationsByAverageSalary,
 } from "../utils/api";
 import AddSalaryForm from "../components/salary/AddSalaryForm";
-import SalaryPieChart from "../components/dashboard/SalaryPieChart";
-import TopCitiesBarChart from "../components/dashboard/TopCitiesBarChart";
+import LocationPieChart from "../components/dashboard/LocationsPieChart";
+import TopLocationsSalaryBarChart from "../components/dashboard/TopLocationsBarChart";
 import { debounce } from "lodash";
 import { capitalizeWords } from "../utils/stringUtils";
 import { useMediaQuery } from "react-responsive";
@@ -74,6 +75,25 @@ const LoadingOverlay = styled.div`
   z-index: 1000;
 `;
 
+const ChartRow = styled(Row)`
+  margin-bottom: 20px;
+`;
+
+const ChartCol = styled(Col)`
+  @media (max-width: 767px) {
+    margin-bottom: 20px;
+  }
+`;
+
+const ToggleButton = styled(Button)`
+  margin-bottom: 15px;
+`;
+
+const ButtonContainer = styled(Container)`
+  margin-top: 20px;
+  margin-bottom: 20px;
+`;
+
 const SalaryListPage = () => {
   const [salaries, setSalaries] = useState([]);
   const [choices, setChoices] = useState({});
@@ -104,7 +124,6 @@ const SalaryListPage = () => {
   });
   const [pendingFilters, setPendingFilters] = useState({});
   const [showAddSalaryModal, setShowAddSalaryModal] = useState(false);
-  const [stats, setStats] = useState(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [dateFilters, setDateFilters] = useState({
     min_added_date: null,
@@ -118,6 +137,9 @@ const SalaryListPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [locationStats, setLocationStats] = useState([]);
+  const [topLocationsSalary, setTopLocationsSalary] = useState([]);
+  const [showCharts, setShowCharts] = useState(true); // Set to true by default
 
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
@@ -170,20 +192,33 @@ const SalaryListPage = () => {
     }
   }, []);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const data = await getSalaryStats();
-      setStats(data);
-    } catch (error) {
-      console.error("Failed to fetch salary stats:", error);
-    }
-  }, []);
-
   useEffect(() => {
     fetchChoices();
-    fetchStats();
     fetchSalaries();
-  }, [fetchChoices, fetchStats, fetchSalaries]);
+  }, [fetchChoices, fetchSalaries]);
+
+  useEffect(() => {
+    const fetchLocationStats = async () => {
+      try {
+        const data = await getLocationStats();
+        setLocationStats(data.chart_data);
+      } catch (error) {
+        console.error("Error fetching location stats:", error);
+      }
+    };
+
+    const fetchTopLocationsSalary = async () => {
+      try {
+        const data = await getTopLocationsByAverageSalary();
+        setTopLocationsSalary(data);
+      } catch (error) {
+        console.error("Error fetching top locations by salary:", error);
+      }
+    };
+
+    fetchLocationStats();
+    fetchTopLocationsSalary();
+  }, []);
 
   const handleMultiSelectChange = (name, selectedOptions) => {
     setPendingFilters((prev) => ({ ...prev, [name]: selectedOptions }));
@@ -605,30 +640,42 @@ const SalaryListPage = () => {
         </Alert>
       )}
 
-      {stats && (
-        <Row className="mb-4">
-          <Col md={6}>
-            <SalaryPieChart data={stats.avg_salary_by_city} />
-          </Col>
-          <Col md={6}>
-            <TopCitiesBarChart data={stats.top_10_cities} />
-          </Col>
-        </Row>
-      )}
+      {/* Toggle button for charts */}
+      <ToggleButton
+        variant="outline-primary"
+        onClick={() => setShowCharts(!showCharts)}
+      >
+        {showCharts ? "Hide Charts" : "Show Charts"}
+      </ToggleButton>
 
-      <Container fluid className="px-3 mb-3">
+      {/* Charts */}
+      {showCharts &&
+        locationStats.length > 0 &&
+        topLocationsSalary.length > 0 && (
+          <ChartRow>
+            <ChartCol md={6}>
+              <LocationPieChart data={locationStats} />
+            </ChartCol>
+            <ChartCol md={6}>
+              <TopLocationsSalaryBarChart data={topLocationsSalary} />
+            </ChartCol>
+          </ChartRow>
+        )}
+
+      {/* Buttons */}
+      <ButtonContainer fluid className="px-3">
         <Row className="gy-2 justify-content-start align-items-center">
-          <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-3">
+          <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <Button variant="primary" onClick={handleOpenAddSalaryModal}>
               Add Salary
             </Button>
           </Col>
-          <Col xs="auto" className="mb-2 mb-sm-0">
+          <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <Button variant="primary" onClick={() => setShowFilterModal(true)}>
               Filters
             </Button>
           </Col>
-          <Col xs="auto" className="mb-2 mb-sm-0">
+          <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <Dropdown as={ButtonGroup}>
               <Button variant="primary">Show: {itemsPerPage}</Button>
               <Dropdown.Toggle
@@ -648,7 +695,7 @@ const SalaryListPage = () => {
               </Dropdown.Menu>
             </Dropdown>
           </Col>
-          <Col xs="auto">
+          <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <ButtonGroup>
               <Button onClick={handlePrevPage} disabled={currentPage === 1}>
                 &lt;
@@ -662,7 +709,7 @@ const SalaryListPage = () => {
             </ButtonGroup>
           </Col>
         </Row>
-      </Container>
+      </ButtonContainer>
 
       <AddSalaryForm
         show={showAddSalaryModal}
@@ -927,6 +974,7 @@ const SalaryListPage = () => {
                 <Button
                   variant="secondary"
                   onClick={() => setShowFilterModal(false)}
+                  data-testid="close-filter-modal"
                 >
                   Close
                 </Button>

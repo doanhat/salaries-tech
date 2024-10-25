@@ -82,3 +82,68 @@
   width: 90%;
   max-width: none !important;
 }
+
+/* Default styles */
+body {
+  font-size: 16px;
+}
+
+/* Styles for mobile devices */
+@media (max-width: 767px) {
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 1.8em;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  h3 {
+    font-size: 1.3em;
+  }
+
+  .table th,
+  .table td {
+    font-size: 0.9em;
+    padding: 0.5rem;
+  }
+
+  .btn {
+    font-size: 0.9em;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .form-control {
+    font-size: 0.9em;
+  }
+
+  .modal-title {
+    font-size: 1.2em;
+  }
+
+  .modal-body {
+    font-size: 0.9em;
+  }
+}
+
+/* Extremely small devices (phones, 375px and down) */
+@media (max-width: 375px) {
+  body {
+    font-size: 13px;
+  }
+
+  .table th,
+  .table td {
+    font-size: 0.8em;
+    padding: 0.4rem;
+  }
+
+  .btn {
+    font-size: 0.8em;
+    padding: 0.2rem 0.5rem;
+  }
+}

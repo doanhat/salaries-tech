@@ -35,15 +35,15 @@ requirements.txt: install-backend ## Generate requirements.txt
 	fi
 
 
-.PHONY: check
-check: install-backend ## Run linters and static analysis
+.PHONY: check-backend
+check-backend: install-backend ## Run linters and static analysis
 	poetry run isort $(PACKAGES)
 	poetry run ruff format $(PACKAGES)
 	poetry run ruff check $(PACKAGE) --fix
 	poetry run mypy --show-error-codes --ignore-missing-imports --config-file pyproject.toml $(PACKAGE)
 
-.PHONY: test
-test: install-backend ## Run unit tests
+.PHONY: test-backend
+test-backend: install-backend ## Run unit tests
 	@if test -e $(FAILURES); then cd backend && poetry run pytest tests --last-failed --exitfirst; fi
 	@rm -rf $(FAILURES)
 	cd backend && poetry run pytest tests
@@ -75,6 +75,10 @@ lint-frontend:
 .PHONY: format-frontend 
 format-frontend: lint-frontend
 	cd frontend && npm run format
+
+.PHONY: test-frontend
+test-frontend:
+	cd frontend && npm run test
 
 
 
