@@ -234,3 +234,26 @@ export const checkJobTitle = async (title) => {
     return { exists: false };
   }
 };
+
+export const getLocationStats = async () => {
+  const response = await fetch(`${API_BASE_URL}/salaries/location-stats/`, {
+    credentials: "include",
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return await response.json();
+};
+
+export const getTopLocationsByAverageSalary = async () => {
+  const response = await fetch(
+    `${API_BASE_URL}/salaries/top-locations-by-salary/`,
+    {
+      credentials: "include",
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return await response.json();
+};
