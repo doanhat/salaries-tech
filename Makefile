@@ -9,7 +9,10 @@ REGION := europe-west1  # Default region, can be overridden in .env
 CAPTCHA_KEY := 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI # Google public site key for testing
 LOCAL_BACKEND_URL := http://localhost:8000
 LOCAL_FRONTEND_URL := http://localhost:3000
+LOCAL_SQLALCHEMY_DATABASE_URL := sqlite:///./salaries.db
+FIREBASE_SITE_NAME := salaries-tech
 
+# Backend
 install-backend: .install-backend .cache ## Install project dependencies
 
 .install-backend: poetry.lock
@@ -34,7 +37,6 @@ requirements.txt: install-backend ## Generate requirements.txt
 		sed -i '1d' dist/requirements.txt; \
 	fi
 
-
 .PHONY: check-backend
 check-backend: install-backend ## Run linters and static analysis
 	poetry run isort $(PACKAGES)
@@ -47,23 +49,8 @@ test-backend: install-backend ## Run unit tests
 	@if test -e $(FAILURES); then cd backend && poetry run pytest tests --last-failed --exitfirst; fi
 	@rm -rf $(FAILURES)
 	cd backend && poetry run pytest tests
-	
 
-.PHONY: sync
-sync: install-backend ## Sync data from API
-	python -m backend.sync.populate_db
-
-.PHONY: replace-db
-replace-db:
-	@echo "Replacing salaries.db with salaries_dev_data.db..."
-	@if [ -f backend/salaries_dev_data.db ]; then \
-		cp backend/salaries_dev_data.db backend/salaries.db && \
-		echo "Database replaced successfully."; \
-	else \
-		echo "Error: salaries_dev_data.db not found in backend/"; \
-		exit 1; \
-	fi
-
+# Frontend
 .PHONY: install-frontend
 install-frontend:
 	cd frontend && npm install
@@ -80,7 +67,28 @@ format-frontend: lint-frontend
 test-frontend:
 	cd frontend && npm run test
 
+# Database
+.PHONY: sync
+sync: install-backend ## Sync data from API
+	## delete the existing db
+	rm -f backend/salaries_dev_data.db backend/salaries_dev_data.db-client_wal_index backend/salaries_dev_data.db-shm backend/salaries_dev_data.db-wal
+	python -m backend.sync.populate_db
 
+.PHONY: create-dev-data
+create-dev-data:
+	turso db shell salaries .dump > dump.sql && cat dump.sql | sqlite3 backend/salaries_dev_data.db 
+
+.PHONY: replace-db
+replace-db:
+	@echo "Replacing salaries.db with salaries_dev_data.db..."
+	@if [ -f backend/salaries_dev_data.db ]; then \
+		rm -f backend/salaries.db backend/salaries.db-client_wal_index backend/salaries.db-shm backend/salaries.db-wal && \
+		cp backend/salaries_dev_data.db backend/salaries.db && \
+		echo "Database replaced successfully."; \
+	else \
+		echo "Error: salaries_dev_data.db not found in backend/"; \
+		exit 1; \
+	fi
 
 # Targets for local development
 .PHONY: set-local-env
@@ -90,6 +98,7 @@ set-local-env:
 		echo "ALLOWED_ORIGINS=" > backend/api/.env; \
 		echo "PROJECT_ID=" >> backend/api/.env; \
 		echo "RECAPTCHA_KEY=" >> backend/api/.env; \
+		echo "SQLALCHEMY_DATABASE_URL=" >> backend/api/.env; \
 	fi
 	if [ ! -f frontend/.env ]; then \
 		echo "REACT_APP_API_BASE_URL=" > frontend/.env; \
@@ -99,10 +108,12 @@ set-local-env:
 		sed -i '' 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$(LOCAL_FRONTEND_URL)"'|' backend/api/.env; \
 		sed -i '' 's|^PROJECT_ID=.*|PROJECT_ID='"$(PROJECT_ID)"'|' backend/api/.env; \
 		sed -i '' 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$(CAPTCHA_KEY)"'|' backend/api/.env; \
+		sed -i '' 's|^SQLALCHEMY_DATABASE_URL=.*|SQLALCHEMY_DATABASE_URL='"$(LOCAL_SQLALCHEMY_DATABASE_URL)"'|' backend/api/.env; \
 	else \
 		sed -i 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$(LOCAL_FRONTEND_URL)"'|' backend/api/.env; \
 		sed -i 's|^PROJECT_ID=.*|PROJECT_ID='"$(PROJECT_ID)"'|' backend/api/.env; \
 		sed -i 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$(CAPTCHA_KEY)"'|' backend/api/.env; \
+		sed -i 's|^SQLALCHEMY_DATABASE_URL=.*|SQLALCHEMY_DATABASE_URL='"$(LOCAL_SQLALCHEMY_DATABASE_URL)"'|' backend/api/.env; \
 	fi
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
@@ -119,6 +130,14 @@ run-local: set-local-env replace-db
 	(cd backend && poetry run uvicorn api.main:app --reload) & \
 	(cd frontend && npm start) & \
 	wait
+
+.PHONY: cleanup
+cleanup:
+	@echo "Cleaning up processes..."
+	@pkill -f "uvicorn api.main:app" || true
+	@pkill -f "react-scripts start" || true
+	@lsof -ti:3000 | xargs kill -9 || true
+	@lsof -ti:8000 | xargs kill -9 || true
 
 # Targets for deployment
 .PHONY: deploy
@@ -160,7 +179,6 @@ set-frontend-env:
 		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$$RECAPTCHA_KEY"'|' frontend/.env; \
 	fi
 
-FIREBASE_SITE_NAME := salaries-tech
 
 deploy-frontend:
 	@echo "Building and deploying frontend to Firebase..."
@@ -206,10 +224,3 @@ update-backend-env: set-backend-env set-frontend-env
 		--set-env-vars RECAPTCHA_KEY=$(shell if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi)
 
 
-.PHONY: cleanup
-cleanup:
-	@echo "Cleaning up processes..."
-	@pkill -f "uvicorn api.main:app" || true
-	@pkill -f "react-scripts start" || true
-	@lsof -ti:3000 | xargs kill -9 || true
-	@lsof -ti:8000 | xargs kill -9 || true
