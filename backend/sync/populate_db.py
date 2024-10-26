@@ -1,39 +1,36 @@
 import json
 from datetime import datetime
-
+import os
+import sys
 import requests
-from backend.api.database import SessionLocal
-from backend.api.models import CompanyDB, JobDB, SalaryDB, TagDB, TechnicalStackDB, WorkType
-from sqlalchemy import func
-from sqlalchemy.orm import Session
+from backend.api.models import WorkType
+from sqlalchemy import create_engine, func, text
+from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+import libsql_experimental as libsql
 
+load_dotenv()
 
-def load_data(db: Session):
+def load_data(session):
     url = "https://salaires.dev/api/salaries"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
 
-        # Get the maximum added_date from the database
-        max_date = db.query(func.max(SalaryDB.added_date)).scalar()
+        result = session.execute(text("SELECT MAX(added_date) FROM salaries"))
+        max_date = result.scalar()
 
-        # Filter data based on the max_date
         if max_date:
             filtered_data = [
                 item
                 for item in data
-                if datetime.strptime(item["date"], "%Y-%m-%dT%H:%M:%S.%fZ").date()
-                > max_date
+                if datetime.strptime(item["date"], "%Y-%m-%dT%H:%M:%S.%fZ").date().isoformat() > max_date
             ]
         else:
             filtered_data = data
-        print(json.dumps(filtered_data, indent=4))
         return filtered_data
     else:
-        raise Exception(
-            f"Failed to fetch data from API. Status code: {response.status_code}"
-        )
-
+        raise Exception(f"Failed to fetch data from API. Status code: {response.status_code}")
 
 def load_company_mapping():
     with open("backend/sync/mapping_20241012172351.txt", "r") as f:
@@ -45,97 +42,97 @@ def load_company_mapping():
                 if len(parts) == 2:
                     company, info = parts
                     company_type = info.split(" (")[0]
-                    mapping[company.strip()] = company_type.strip()
+                    mapping[company.strip()] = company_type.strip().lower()
         return mapping
 
-
-def get_or_create_company(db: Session, name: str, company_type: str):
-    company = db.query(CompanyDB).filter(CompanyDB.name == name).first()
-    if not company:
-        company = CompanyDB(name=name, type=company_type)
-        db.add(company)
-        db.flush()
-    return company
-
-
-def get_or_create_tag(db: Session, name: str):
-    tag = db.query(TagDB).filter(TagDB.name == name.lower()).first()
-    if not tag:
-        tag = TagDB(name=name.lower())
-        db.add(tag)
-        db.flush()
-    return tag
-
-
-def get_or_create_job(db: Session, title: str):
-    job = db.query(JobDB).filter(JobDB.title == title.lower()).first()
-    if not job:
-        job = JobDB(title=title.lower())
-        db.add(job)
-        db.flush()
-    return job
-
-
-def get_or_create_technical_stack(db: Session, name: str):
-    stack = (
-        db.query(TechnicalStackDB).filter(TechnicalStackDB.name == name.lower()).first()
-    )
-    if not stack:
-        stack = TechnicalStackDB(name=name.lower())
-        db.add(stack)
-        db.flush()
-    return stack
-
+def prompt_for_verification(item, default):
+    user_input = input(f"Verify {item} (current: {default}): ").strip()
+    return user_input if user_input else default
 
 def populate_db():
-    db = SessionLocal()
-    company_mapping = load_company_mapping()
+    url = os.getenv("TURSO_DATABASE_URL")
+    auth_token = os.getenv("TURSO_AUTH_TOKEN")
+    engine = create_engine(
+        f"sqlite+{url}/?authToken={auth_token}&secure=true",
+        echo=True
+    )
+    
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
     try:
-        data = load_data(db)
+        company_mapping = load_company_mapping()
+        data = load_data(session)
 
         for item in data:
-            company_name = item["company"]
-            company_type = company_mapping.get(company_name, None)
-            company = get_or_create_company(db, company_name, company_type)
+            print("\nNew salary entry:")
+            print(json.dumps(item, indent=2))
+            
+            company_name = prompt_for_verification("company", item["company"])
+            company_type = prompt_for_verification("company type", company_mapping.get(company_name, "Unknown"))
+            
+            result = session.execute(text("SELECT id FROM companies WHERE name = :name"), {"name": company_name})
+            company_id = result.scalar()
+            if not company_id:
+                result = session.execute(text("INSERT INTO companies (name, type) VALUES (:name, :type) RETURNING id"),
+                                         {"name": company_name, "type": company_type})
+                company_id = result.scalar()
 
-            jobs = [get_or_create_job(db, item["title"])] if item["title"] else []
+            job_title = prompt_for_verification("job title", item["title"])
+            job_id = None
+            if job_title:
+                result = session.execute(text("SELECT id FROM jobs WHERE title = :title"), {"title": job_title.lower()})
+                job_id = result.scalar()
+                if not job_id:
+                    result = session.execute(text("INSERT INTO jobs (title) VALUES (:title) RETURNING id"),
+                                             {"title": job_title.lower()})
+                    job_id = result.scalar()
 
-            # Assuming technical stacks are not provided in the API data
-            stacks = []
+            salary_data = {
+                "company_id": company_id,
+                "location": prompt_for_verification("location", item["location"].lower()),
+                "gross_salary": float(prompt_for_verification("gross salary", item["compensation"])),
+                "experience_years_company": int(prompt_for_verification("years at company", item["company_xp"])),
+                "total_experience_years": int(prompt_for_verification("total years of experience", item["total_xp"])),
+                "level": prompt_for_verification("level", item["level"].lower() if item["level"] else None),
+                "work_type": prompt_for_verification("work type", 
+                    WorkType.REMOTE.value if item["remote"] and item["remote"]["variant"] == "full"
+                    else WorkType.HYBRID.value if item["remote"] else None),
+                "added_date": prompt_for_verification("added date", 
+                    datetime.strptime(item["date"], "%Y-%m-%dT%H:%M:%S.%fZ").date().isoformat())
+            }
 
-            salary = SalaryDB(
-                company=company,
-                location=item["location"].lower(),
-                gross_salary=item["compensation"],
-                gender=None,  # Not provided in the API data
-                experience_years_company=item["company_xp"],
-                total_experience_years=item["total_xp"],
-                level=item["level"].lower() if item["level"] else None,
-                work_type=WorkType.REMOTE.value
-                if item["remote"] and item["remote"]["variant"] == "full"
-                else WorkType.HYBRID.value
-                if item["remote"]
-                else None,
-                added_date=datetime.strptime(
-                    item["date"], "%Y-%m-%dT%H:%M:%S.%fZ"
-                ).date(),
-                leave_days=None,  # Not provided in the API data
-            )
+            print("\nVerified salary data:")
+            print(json.dumps(salary_data, indent=2))
+            
+            if input("Do you want to insert this data? (y/n): ").lower() != 'y':
+                print("Skipping this entry.")
+                continue
 
-            salary.jobs.extend(jobs)
-            salary.technical_stacks.extend(stacks)
+            result = session.execute(text("""
+                INSERT INTO salaries (company_id, location, gross_salary, experience_years_company, 
+                                      total_experience_years, level, work_type, added_date)
+                VALUES (:company_id, :location, :gross_salary, :experience_years_company, 
+                        :total_experience_years, :level, :work_type, :added_date)
+                RETURNING id
+            """), salary_data)
+            salary_id = result.scalar()
 
-            db.add(salary)
+            if job_id:
+                session.execute(text("INSERT INTO salary_job (salary_id, job_id) VALUES (:salary_id, :job_id)"),
+                                {"salary_id": salary_id, "job_id": job_id})
 
-        db.commit()
+            print("Entry inserted successfully!")
+
+        session.commit()
         print("Database populated successfully!")
     except Exception as e:
-        db.rollback()
+        session.rollback()
         print(f"An error occurred: {e}")
     finally:
-        db.close()
-
+        conn = libsql.connect("backend/salaries_dev_data.db", sync_url=url, auth_token=auth_token)
+        conn.sync()
+        session.close()
 
 if __name__ == "__main__":
     populate_db()

@@ -137,4 +137,5 @@ salaries-*-*.json
 backend/salaries.db
 *.db-shm
 *.db-wal
+*.db-client_wal_index
 backend/test.db
