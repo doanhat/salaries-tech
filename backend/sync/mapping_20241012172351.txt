@@ -805,3 +805,5 @@ ZestMeUp - Scale-up (HR Tech)
 Sophiagenetics - Scale-up (HealthTech)
 
 Ubika - SME (Tech)
+
+CircularX - Scale-up (GreenTech)
