@@ -11,24 +11,13 @@ import libsql_experimental as libsql
 
 load_dotenv()
 
-def load_data(session):
+def load_data():
     url = "https://salaires.dev/api/salaries"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-
-        result = session.execute(text("SELECT MAX(added_date) FROM salaries"))
-        max_date = result.scalar()
-
-        if max_date:
-            filtered_data = [
-                item
-                for item in data
-                if datetime.strptime(item["date"], "%Y-%m-%dT%H:%M:%S.%fZ").date().isoformat() > max_date
-            ]
-        else:
-            filtered_data = data
-        return filtered_data
+        print(f"Loaded {len(data)} salaries from API")
+        return data
     else:
         raise Exception(f"Failed to fetch data from API. Status code: {response.status_code}")
 
@@ -62,70 +51,88 @@ def populate_db():
 
     try:
         company_mapping = load_company_mapping()
-        data = load_data(session)
+        data = load_data()
+        with open("backend/sync/skipped_salaries.json", "r+") as f:
+            skipped_data = json.load(f)
+            for item in data:
+                print("\nNew salary entry:")
+                print(json.dumps(item, indent=2))
+                if item in skipped_data:
+                    print("Entry already exists in the JSON file. Skipping this entry.")
+                    continue
+                else:
+                    if input("Do you want to process this entry? (y/n): ").lower() != 'y':
+                        print("Skipping this entry.")
+                        skipped_data.append(item)
+                        continue
+                    else:
+                        company_name = prompt_for_verification("company", item["company"])
+                        company_type = prompt_for_verification("company type", company_mapping.get(company_name, "Unknown"))
+                        
+                        result = session.execute(text("SELECT id FROM companies WHERE name = :name"), {"name": company_name})
+                        company_id = result.scalar()
+                        if not company_id:
+                            result = session.execute(text("INSERT INTO companies (name, type) VALUES (:name, :type) RETURNING id"),
+                                                    {"name": company_name, "type": company_type})
+                            company_id = result.scalar()
 
-        for item in data:
-            print("\nNew salary entry:")
-            print(json.dumps(item, indent=2))
-            
-            company_name = prompt_for_verification("company", item["company"])
-            company_type = prompt_for_verification("company type", company_mapping.get(company_name, "Unknown"))
-            
-            result = session.execute(text("SELECT id FROM companies WHERE name = :name"), {"name": company_name})
-            company_id = result.scalar()
-            if not company_id:
-                result = session.execute(text("INSERT INTO companies (name, type) VALUES (:name, :type) RETURNING id"),
-                                         {"name": company_name, "type": company_type})
-                company_id = result.scalar()
+                        job_title = prompt_for_verification("job title", item["title"])
+                        job_id = None
+                        if job_title:
+                            result = session.execute(text("SELECT id FROM jobs WHERE title = :title"), {"title": job_title.lower()})
+                            job_id = result.scalar()
+                            if not job_id:
+                                result = session.execute(text("INSERT INTO jobs (title) VALUES (:title) RETURNING id"),
+                                                        {"title": job_title.lower()})
+                                job_id = result.scalar()
 
-            job_title = prompt_for_verification("job title", item["title"])
-            job_id = None
-            if job_title:
-                result = session.execute(text("SELECT id FROM jobs WHERE title = :title"), {"title": job_title.lower()})
-                job_id = result.scalar()
-                if not job_id:
-                    result = session.execute(text("INSERT INTO jobs (title) VALUES (:title) RETURNING id"),
-                                             {"title": job_title.lower()})
-                    job_id = result.scalar()
+                        salary_data = {
+                            "company_id": company_id,
+                            "location": prompt_for_verification("location", item["location"].lower()),
+                            "gross_salary": float(prompt_for_verification("gross salary", item["compensation"])),
+                            "experience_years_company": int(prompt_for_verification("years at company", item["company_xp"])),
+                            "total_experience_years": int(prompt_for_verification("total years of experience", item["total_xp"])),
+                            "level": prompt_for_verification("level", item["level"].lower() if item["level"] else None),
+                            "work_type": prompt_for_verification("work type", 
+                                WorkType.REMOTE.value if item["remote"] and item["remote"]["variant"] == "full"
+                                else WorkType.HYBRID.value if item["remote"] else None),
+                            "added_date": prompt_for_verification("added date", 
+                                datetime.strptime(item["date"], "%Y-%m-%dT%H:%M:%S.%fZ").date().isoformat())
+                        }
+                        # check if a salary with the same data already exists
+                        result = session.execute(text("SELECT id FROM salaries WHERE company_id = :company_id AND location = :location AND gross_salary = :gross_salary AND experience_years_company = :experience_years_company AND total_experience_years = :total_experience_years AND level = :level AND work_type = :work_type AND added_date = :added_date"), salary_data)
+                        if result.scalar():
+                            print("Salary with the same data already exists. Skipping this entry.")
+                            continue
 
-            salary_data = {
-                "company_id": company_id,
-                "location": prompt_for_verification("location", item["location"].lower()),
-                "gross_salary": float(prompt_for_verification("gross salary", item["compensation"])),
-                "experience_years_company": int(prompt_for_verification("years at company", item["company_xp"])),
-                "total_experience_years": int(prompt_for_verification("total years of experience", item["total_xp"])),
-                "level": prompt_for_verification("level", item["level"].lower() if item["level"] else None),
-                "work_type": prompt_for_verification("work type", 
-                    WorkType.REMOTE.value if item["remote"] and item["remote"]["variant"] == "full"
-                    else WorkType.HYBRID.value if item["remote"] else None),
-                "added_date": prompt_for_verification("added date", 
-                    datetime.strptime(item["date"], "%Y-%m-%dT%H:%M:%S.%fZ").date().isoformat())
-            }
+                        print("\nVerified salary data:")
+                        print(json.dumps(salary_data, indent=2))
+                        
+                        if input("Do you want to insert this data? (y/n): ").lower() != 'y':
+                            print("Skipping this entry.")
+                            continue
+                        
+                        result = session.execute(text("""
+                            INSERT INTO salaries (company_id, location, gross_salary, experience_years_company, 
+                                                total_experience_years, level, work_type, added_date)
+                            VALUES (:company_id, :location, :gross_salary, :experience_years_company, 
+                                    :total_experience_years, :level, :work_type, :added_date)
+                            RETURNING id
+                        """), salary_data)
+                        salary_id = result.scalar()
 
-            print("\nVerified salary data:")
-            print(json.dumps(salary_data, indent=2))
-            
-            if input("Do you want to insert this data? (y/n): ").lower() != 'y':
-                print("Skipping this entry.")
-                continue
+                        if job_id:
+                            session.execute(text("INSERT INTO salary_job (salary_id, job_id) VALUES (:salary_id, :job_id)"),
+                                            {"salary_id": salary_id, "job_id": job_id})
 
-            result = session.execute(text("""
-                INSERT INTO salaries (company_id, location, gross_salary, experience_years_company, 
-                                      total_experience_years, level, work_type, added_date)
-                VALUES (:company_id, :location, :gross_salary, :experience_years_company, 
-                        :total_experience_years, :level, :work_type, :added_date)
-                RETURNING id
-            """), salary_data)
-            salary_id = result.scalar()
+                        print("Entry inserted successfully!")
 
-            if job_id:
-                session.execute(text("INSERT INTO salary_job (salary_id, job_id) VALUES (:salary_id, :job_id)"),
-                                {"salary_id": salary_id, "job_id": job_id})
+                        session.commit()
+                        skipped_data.append(item)
+                        print("Database populated successfully!")
 
-            print("Entry inserted successfully!")
-
-        session.commit()
-        print("Database populated successfully!")
+            with open('backend/sync/skipped_salaries.json', 'w') as f:
+                json.dump(skipped_data, f, indent=2)
     except Exception as e:
         session.rollback()
         print(f"An error occurred: {e}")
