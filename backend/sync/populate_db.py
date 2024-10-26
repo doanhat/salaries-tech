@@ -8,15 +8,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 
-def load_data():
+def load_data(db: Session):
     url = "https://salaires.dev/api/salaries"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
 
         # Get the maximum added_date from the database
-        with SessionLocal() as db:
-            max_date = db.query(func.max(SalaryDB.added_date)).scalar()
+        max_date = db.query(func.max(SalaryDB.added_date)).scalar()
 
         # Filter data based on the max_date
         if max_date:
@@ -93,7 +92,7 @@ def populate_db():
     company_mapping = load_company_mapping()
 
     try:
-        data = load_data()
+        data = load_data(db)
 
         for item in data:
             company_name = item["company"]
