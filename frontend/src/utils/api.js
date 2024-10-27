@@ -3,11 +3,22 @@ import axios from "axios";
 export const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
 
-export const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
+export const RECAPTCHA_SITE_KEY =
+  process.env.REACT_APP_RECAPTCHA_SITE_KEY || "";
+
+export const API_KEY = process.env.REACT_APP_API_KEY || "";
+
+const getHeaders = async () => {
+  return {
+    "X-API-Key": API_KEY,
+  };
+};
 
 export const getSalaryStats = async () => {
+  const headers = await getHeaders();
   const response = await fetch(`${API_BASE_URL}/salaries/stats/`, {
     credentials: "include",
+    headers,
   });
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -17,8 +28,10 @@ export const getSalaryStats = async () => {
 
 export const getChoices = async () => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(`${API_BASE_URL}/choices/`, {
       credentials: "include",
+      headers,
     });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -38,8 +51,8 @@ export const getSalaries = async (
   skip = 0,
   limit = 50,
 ) => {
+  const headers = await getHeaders();
   const queryParams = new URLSearchParams();
-  console.log("Filters:", filters);
   Object.entries(filters).forEach(([key, value]) => {
     if (
       value !== null &&
@@ -56,12 +69,11 @@ export const getSalaries = async (
   queryParams.append("skip", skip);
   queryParams.append("limit", limit);
 
-  console.log("Query params being sent to backend:", queryParams.toString());
-
   const response = await fetch(
     `${API_BASE_URL}/salaries/?${queryParams.toString()}`,
     {
       credentials: "include",
+      headers,
     },
   );
 
@@ -127,6 +139,7 @@ export const addSalary = async (salaryData, captchaToken, userAgent) => {
       method: "POST",
       body: formData,
       credentials: "include",
+      headers: await getHeaders(),
     });
 
     if (!response.ok) {
@@ -143,10 +156,12 @@ export const addSalary = async (salaryData, captchaToken, userAgent) => {
 
 export const checkCompany = async (name) => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(
       `${API_BASE_URL}/companies/check-name/?name=${encodeURIComponent(name)}`,
       {
         credentials: "include",
+        headers,
       },
     );
     if (!response.ok) {
@@ -161,10 +176,12 @@ export const checkCompany = async (name) => {
 
 export const checkCompanyTag = async (name) => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(
       `${API_BASE_URL}/companies/check-tag/?name=${encodeURIComponent(name)}`,
       {
         credentials: "include",
+        headers,
       },
     );
     if (!response.ok) {
@@ -179,10 +196,12 @@ export const checkCompanyTag = async (name) => {
 
 export const checkLocation = async (name) => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(
       `${API_BASE_URL}/salaries/check-location/?name=${encodeURIComponent(name)}`,
       {
         credentials: "include",
+        headers,
       },
     );
     if (!response.ok) {
@@ -196,15 +215,18 @@ export const checkLocation = async (name) => {
 };
 
 export const getTechnicalStacks = async () => {
-  return await axios.get(`${API_BASE_URL}/technical-stacks`);
+  const headers = await getHeaders();
+  return await axios.get(`${API_BASE_URL}/technical-stacks`, { headers });
 };
 
 export const checkTechnicalStack = async (name) => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(
       `${API_BASE_URL}/technical-stacks/check-name/?name=${encodeURIComponent(name)}`,
       {
         credentials: "include",
+        headers,
       },
     );
     if (!response.ok) {
@@ -219,10 +241,12 @@ export const checkTechnicalStack = async (name) => {
 
 export const checkJobTitle = async (title) => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(
       `${API_BASE_URL}/jobs/check-title/?title=${encodeURIComponent(title)}`,
       {
         credentials: "include",
+        headers,
       },
     );
     if (!response.ok) {
@@ -236,8 +260,10 @@ export const checkJobTitle = async (title) => {
 };
 
 export const getLocationStats = async () => {
+  const headers = await getHeaders();
   const response = await fetch(`${API_BASE_URL}/salaries/location-stats/`, {
     credentials: "include",
+    headers,
   });
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -246,10 +272,12 @@ export const getLocationStats = async () => {
 };
 
 export const getTopLocationsByAverageSalary = async () => {
+  const headers = await getHeaders();
   const response = await fetch(
     `${API_BASE_URL}/salaries/top-locations-by-salary/`,
     {
       credentials: "include",
+      headers,
     },
   );
   if (!response.ok) {

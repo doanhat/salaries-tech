@@ -10,7 +10,9 @@ CAPTCHA_KEY := 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI # Google public site key
 LOCAL_BACKEND_URL := http://localhost:8000
 LOCAL_FRONTEND_URL := http://localhost:3000
 LOCAL_SQLALCHEMY_DATABASE_URL := sqlite:///./salaries.db
+LOCAL_API_KEY := local-api-key
 FIREBASE_SITE_NAME := salaries-tech
+API_KEY_SECRET_NAME := salaries-api-key
 
 # Backend
 install-backend: .install-backend .cache ## Install project dependencies
@@ -99,28 +101,37 @@ set-local-env:
 		echo "PROJECT_ID=" >> backend/api/.env; \
 		echo "RECAPTCHA_KEY=" >> backend/api/.env; \
 		echo "SQLALCHEMY_DATABASE_URL=" >> backend/api/.env; \
+		echo "API_KEY_SECRET_NAME=" >> backend/api/.env; \
+		echo "ENV=dev" >> backend/api/.env; \
 	fi
 	if [ ! -f frontend/.env ]; then \
 		echo "REACT_APP_API_BASE_URL=" > frontend/.env; \
 		echo "REACT_APP_RECAPTCHA_SITE_KEY=" >> frontend/.env; \
+		echo "REACT_APP_API_KEY=" >> frontend/.env; \
 	fi
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$(LOCAL_FRONTEND_URL)"'|' backend/api/.env; \
 		sed -i '' 's|^PROJECT_ID=.*|PROJECT_ID='"$(PROJECT_ID)"'|' backend/api/.env; \
 		sed -i '' 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$(CAPTCHA_KEY)"'|' backend/api/.env; \
 		sed -i '' 's|^SQLALCHEMY_DATABASE_URL=.*|SQLALCHEMY_DATABASE_URL='"$(LOCAL_SQLALCHEMY_DATABASE_URL)"'|' backend/api/.env; \
+		sed -i '' 's|^ENV=.*|ENV=dev|' backend/api/.env; \
+		sed -i '' 's|^API_KEY_SECRET_NAME=.*|API_KEY_SECRET_NAME='"$(API_KEY_SECRET_NAME)"'|' backend/api/.env; \
 	else \
 		sed -i 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$(LOCAL_FRONTEND_URL)"'|' backend/api/.env; \
 		sed -i 's|^PROJECT_ID=.*|PROJECT_ID='"$(PROJECT_ID)"'|' backend/api/.env; \
 		sed -i 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$(CAPTCHA_KEY)"'|' backend/api/.env; \
 		sed -i 's|^SQLALCHEMY_DATABASE_URL=.*|SQLALCHEMY_DATABASE_URL='"$(LOCAL_SQLALCHEMY_DATABASE_URL)"'|' backend/api/.env; \
+		sed -i 's|^ENV=.*|ENV=dev|' backend/api/.env; \
+		sed -i 's|^API_KEY_SECRET_NAME=.*|API_KEY_SECRET_NAME='"$(API_KEY_SECRET_NAME)"'|' backend/api/.env; \
 	fi
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
 		sed -i '' 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(CAPTCHA_KEY)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$(LOCAL_API_KEY)"'|' frontend/.env; \
 	else \
 		sed -i 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
 		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(CAPTCHA_KEY)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$(LOCAL_API_KEY)"'|' frontend/.env; \
 	fi
 
 .PHONY: run-local
@@ -151,48 +162,6 @@ build-and-push: enable-apis requirements.txt
 	@echo "Building and pushing Docker image to GCR..."
 	gcloud builds submit --tag $(GCR_IMAGE)
 
-deploy-backend: build-and-push
-	@echo "Deploying to Google Cloud Run..."
-	gcloud run deploy $(IMAGE_NAME) \
-		--image $(GCR_IMAGE) \
-		--platform managed \
-		--region $(REGION) \
-		--allow-unauthenticated \
-		--set-env-vars PROJECT_ID=$(PROJECT_ID) \
-		--set-env-vars RECAPTCHA_KEY=$(shell if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
-		--set-env-vars ALLOWED_ORIGINS=$(shell if [ -n "$(ALLOWED_ORIGINS)" ]; then echo "$(ALLOWED_ORIGINS)"; else awk -F "=" "/ALLOWED_ORIGINS/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
-		--set-env-vars SQLALCHEMY_DATABASE_URL=$(shell if [ -n "$(SQLALCHEMY_DATABASE_URL)" ]; then echo "$(SQLALCHEMY_DATABASE_URL)"; else awk -F "=" "/SQLALCHEMY_DATABASE_URL/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi)
-
-
-set-frontend-env:
-	@CLOUD_RUN_URL=$$(gcloud run services describe $(IMAGE_NAME) --region $(REGION) --format='value(status.url)') && \
-	RECAPTCHA_KEY=$$(if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) && \
-	if [ ! -f frontend/.env ]; then \
-		echo "REACT_APP_API_BASE_URL=" > frontend/.env; \
-		echo "REACT_APP_RECAPTCHA_SITE_KEY=" >> frontend/.env; \
-	fi && \
-	if [ "$$(uname)" = "Darwin" ]; then \
-		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$$CLOUD_RUN_URL"'|' frontend/.env; \
-		sed -i '' 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$$RECAPTCHA_KEY"'|' frontend/.env; \
-	else \
-		sed -i 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$$CLOUD_RUN_URL"'|' frontend/.env; \
-		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$$RECAPTCHA_KEY"'|' frontend/.env; \
-	fi
-
-
-deploy-frontend:
-	@echo "Building and deploying frontend to Firebase..."
-	@echo "Installing frontend dependencies..."
-	cd frontend && npm ci
-	@echo "Building React app..."
-	cd frontend && npm run build
-	@echo "Retrieving Firebase Hosting URL..."
-	@FIREBASE_PROJECT_ID=$$(gcloud config get-value project) && \
-	SITE_NAME=$${FIREBASE_SITE_NAME:-$(FIREBASE_SITE_NAME)} && \
-	firebase use $$FIREBASE_PROJECT_ID --add && \
-	firebase target:apply hosting $$SITE_NAME $$SITE_NAME && \
-	firebase deploy --only hosting:$$SITE_NAME
-	
 set-backend-env:
 	@if [ ! -f backend/api/.env ]; then \
 		echo "ALLOWED_ORIGINS=" > backend/api/.env; \
@@ -214,13 +183,69 @@ set-backend-env:
 		sed -i 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$$RECAPTCHA_KEY"'|' backend/api/.env; \
 	fi
 
-# Update Cloud Run with new ALLOWED_ORIGINS
-update-backend-env: set-backend-env set-frontend-env
-	gcloud run services update $(IMAGE_NAME) \
+deploy-backend: build-and-push
+	@echo "Deploying to Google Cloud Run..."
+	gcloud run deploy $(IMAGE_NAME) \
+		--image $(GCR_IMAGE) \
+		--platform managed \
 		--region $(REGION) \
+		--allow-unauthenticated \
+		--set-env-vars PROJECT_ID=$(PROJECT_ID) \
+		--set-env-vars RECAPTCHA_KEY=$(shell if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
 		--set-env-vars ALLOWED_ORIGINS=$(shell if [ -n "$(ALLOWED_ORIGINS)" ]; then echo "$(ALLOWED_ORIGINS)"; else awk -F "=" "/ALLOWED_ORIGINS/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
 		--set-env-vars SQLALCHEMY_DATABASE_URL=$(shell if [ -n "$(SQLALCHEMY_DATABASE_URL)" ]; then echo "$(SQLALCHEMY_DATABASE_URL)"; else awk -F "=" "/SQLALCHEMY_DATABASE_URL/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
-		--set-env-vars PROJECT_ID=$(shell if [ -n "$(PROJECT_ID)" ]; then echo "$(PROJECT_ID)"; else awk -F "=" "/PROJECT_ID/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
-		--set-env-vars RECAPTCHA_KEY=$(shell if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi)
+		--set-env-vars ENV=$(ENV) \
+		--set-env-vars API_KEY_SECRET_NAME=$(API_KEY_SECRET_NAME)
 
+
+set-frontend-env:
+	@CLOUD_RUN_URL=$$(gcloud run services describe $(IMAGE_NAME) --region $(REGION) --format='value(status.url)') && \
+	RECAPTCHA_KEY=$$(if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) && \
+	API_KEY=$$(gcloud secrets versions access latest --secret=$(API_KEY_SECRET_NAME)) && \
+	if [ ! -f frontend/.env ]; then \
+		echo "REACT_APP_API_BASE_URL=" > frontend/.env; \
+		echo "REACT_APP_RECAPTCHA_SITE_KEY=" >> frontend/.env; \
+		echo "REACT_APP_API_KEY=" >> frontend/.env; \
+	fi && \
+	if [ "$$(uname)" = "Darwin" ]; then \
+		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$$CLOUD_RUN_URL"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$$RECAPTCHA_KEY"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$$API_KEY"'|' frontend/.env; \
+	else \
+		sed -i 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$$CLOUD_RUN_URL"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$$RECAPTCHA_KEY"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$$API_KEY"'|' frontend/.env; \
+	fi
+
+
+deploy-frontend:
+	@echo "Building and deploying frontend to Firebase..."
+	@echo "Installing frontend dependencies..."
+	cd frontend && npm ci
+	@echo "Building React app..."
+	cd frontend && npm run build
+	@echo "Retrieving Firebase Hosting URL..."
+	@FIREBASE_PROJECT_ID=$$(gcloud config get-value project) && \
+	SITE_NAME=$${FIREBASE_SITE_NAME:-$(FIREBASE_SITE_NAME)} && \
+	firebase use $$FIREBASE_PROJECT_ID --add && \
+	firebase target:apply hosting $$SITE_NAME $$SITE_NAME && \
+	firebase deploy --only hosting:$$SITE_NAME
+
+.PHONY: create-api-key
+create-api-key:
+	@echo "Creating/updating API key secret..."
+	@API_KEY=$$(openssl rand -base64 32 | tr -d '\n' | tr -d "'" | tr -d " ") && \
+	if gcloud secrets describe $(API_KEY_SECRET_NAME) >/dev/null 2>&1; then \
+		printf "%s" "$$API_KEY" | gcloud secrets versions add $(API_KEY_SECRET_NAME) --data-file=-; \
+		echo "Updated existing API key secret with new version"; \
+	else \
+		printf "%s" "$$API_KEY" | gcloud secrets create $(API_KEY_SECRET_NAME) \
+			--data-file=- \
+			--replication-policy="automatic"; \
+		echo "Created new API key secret"; \
+	fi
+
+.PHONY: get-api-key
+get-api-key:
+	@gcloud secrets versions access latest --secret=$(API_KEY_SECRET_NAME)
 

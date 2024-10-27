@@ -19,6 +19,8 @@ sys.path.insert(0, backend_dir)
 
 # Create the database URL
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{os.path.join(backend_dir, 'test.db')}"
+# Set the environment to test
+os.environ["ENV"] = "test"
 
 
 # Database fixtures
