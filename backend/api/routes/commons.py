@@ -50,8 +50,3 @@ async def get_choices(db: Session = Depends(get_db_session)):
     except Exception as e:
         logger.error(f"Unexpected error when fetching choices: {str(e)}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred")
-
-
-@router.get("/")
-async def read_root():
-    return {"message": "Salary Information API"}

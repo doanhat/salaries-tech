@@ -58,7 +58,7 @@ jobs:
       if: github.event.inputs.deploy_backend == 'true'
       run: |
         make set-backend-env PROJECT_ID=${{ secrets.GCP_PROJECT_ID }} RECAPTCHA_KEY=${{ secrets.RECAPTCHA_KEY }}
-        make deploy-backend SQLALCHEMY_DATABASE_URL=${{ secrets.SQLALCHEMY_DATABASE_URL }}
+        make deploy-backend SQLALCHEMY_DATABASE_URL=${{ secrets.SQLALCHEMY_DATABASE_URL }} ENV=prod
 
   frontend:
     runs-on: ubuntu-latest

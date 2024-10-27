@@ -24,7 +24,7 @@ from ..models import (
     salary_job,
     salary_technical_stack,
 )
-from ..routes.auth import create_assessment
+from ..services.auth import create_assessment
 
 router = APIRouter(prefix="/salaries", tags=["salaries"])
 
@@ -157,7 +157,6 @@ async def create_salary(
                 )
                 for stack in db_salary.technical_stacks
             ]
-        print(created_salary)
         return created_salary
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=e.errors())
@@ -386,18 +385,14 @@ async def delete_salaries(
     salary_ids: List[int] = Query(...), db: Session = Depends(get_db_session)
 ) -> Dict[str, str]:
     try:
-        print(f"Attempting to delete salaries with IDs: {salary_ids}")
-
         # Query the salaries by IDs
         salaries = db.query(SalaryDB).filter(SalaryDB.id.in_(salary_ids)).all()
-        print(f"Found salaries to delete: {[s.id for s in salaries]}")
 
         # Check if all requested salaries were found
         found_ids = [salary.id for salary in salaries]
         not_found_ids = set(salary_ids) - set(int(id) for id in found_ids)
 
         if not_found_ids:
-            print(f"Salaries not found: {not_found_ids}")
             raise HTTPException(
                 status_code=404,
                 detail=f"Salaries with IDs {list(not_found_ids)} not found",
@@ -415,20 +410,16 @@ async def delete_salaries(
         # Delete the salaries
         for salary in salaries:
             db.delete(salary)
-            print(f"Deleted salary with ID: {salary.id}")
 
         db.commit()
-        print("Committed deletion transaction")
 
         return {
             "message": f"Salaries with IDs {salary_ids} have been deleted successfully"
         }
     except HTTPException as he:
-        print(f"HTTP Exception: {str(he)}")
         raise he
     except Exception as e:
         db.rollback()
-        print(f"Error deleting salaries: {str(e)}")
         logger.error(f"Error deleting salaries with IDs {salary_ids}: {str(e)}")
         raise HTTPException(
             status_code=500,
