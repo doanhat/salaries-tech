@@ -17,7 +17,7 @@ export const getSalaryStats = async () => {
 
 export const getChoices = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/salaries/choices/`, {
+    const response = await fetch(`${API_BASE_URL}/choices/`, {
       credentials: "include",
     });
     if (!response.ok) {
@@ -144,7 +144,7 @@ export const addSalary = async (salaryData, captchaToken, userAgent) => {
 export const checkCompany = async (name) => {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/check-company-name/?name=${encodeURIComponent(name)}`,
+      `${API_BASE_URL}/companies/check-name/?name=${encodeURIComponent(name)}`,
       {
         credentials: "include",
       },
@@ -162,7 +162,7 @@ export const checkCompany = async (name) => {
 export const checkCompanyTag = async (name) => {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/check-company-tag/?name=${encodeURIComponent(name)}`,
+      `${API_BASE_URL}/companies/check-tag/?name=${encodeURIComponent(name)}`,
       {
         credentials: "include",
       },
@@ -180,7 +180,7 @@ export const checkCompanyTag = async (name) => {
 export const checkLocation = async (name) => {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/check-location/?name=${encodeURIComponent(name)}`,
+      `${API_BASE_URL}/salaries/check-location/?name=${encodeURIComponent(name)}`,
       {
         credentials: "include",
       },
@@ -202,7 +202,7 @@ export const getTechnicalStacks = async () => {
 export const checkTechnicalStack = async (name) => {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/check-technical-stack/?name=${encodeURIComponent(name)}`,
+      `${API_BASE_URL}/technical-stacks/check-name/?name=${encodeURIComponent(name)}`,
       {
         credentials: "include",
       },
@@ -220,7 +220,7 @@ export const checkTechnicalStack = async (name) => {
 export const checkJobTitle = async (title) => {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/check-job-title/?title=${encodeURIComponent(title)}`,
+      `${API_BASE_URL}/jobs/check-title/?title=${encodeURIComponent(title)}`,
       {
         credentials: "include",
       },
