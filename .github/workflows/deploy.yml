@@ -35,37 +35,36 @@ jobs:
       uses: actions/setup-python@main
       with:
         python-version: '3.11.4'
-        cache: 'pip'
+
+    - name: Cache pip
+      uses: actions/cache@main
+      with:
+        path: ~/.cache/pip
+        key: pip-${{ runner.os }}-python-3.11.4-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          pip-${{ runner.os }}-python-3.11.4-
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        poetry config virtualenvs.in-project true
 
     - name: Get Poetry cache dir
       id: poetry-cache
       run: |
+        poetry --version
         echo "dir=$(poetry config cache-dir)" >> $GITHUB_OUTPUT
 
     - name: Cache Poetry
       uses: actions/cache@main
       with:
         path: |
-          ${{ steps.poetry-cache.outputs.dir }}
-          ~/.local/share/pypoetry
-          ~/.local/bin/poetry
-        key: poetry-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+          ~/.local
+          ~/.cache/pypoetry
+          .venv
+        key: poetry-${{ runner.os }}-python-${{ hashFiles('**/poetry.lock') }}
         restore-keys: |
-          poetry-${{ runner.os }}-
-
-    - name: Cache virtual environment
-      uses: actions/cache@main
-      with:
-        path: .venv
-        key: venv-${{ runner.os }}-python-${{ hashFiles('poetry.lock') }}
-        restore-keys: |
-          venv-${{ runner.os }}-python-
-
-    - name: Install Poetry
-      if: steps.poetry-cache.outputs.cache-hit != 'true'
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        poetry config virtualenvs.in-project true
+          poetry-${{ runner.os }}-python-
 
     - name: Install dependencies
       run: poetry install
@@ -154,8 +153,13 @@ jobs:
     - name: Cache Firebase Tools
       uses: actions/cache@main
       with:
-        path: ~/.cache/firebase
-        key: firebase-tools-${{ runner.os }}-${{ hashFiles('**/firebase.json') }}
+        path: |
+          ~/.npm/firebase-tools
+          ~/.cache/firebase
+          ~/.config/configstore/firebase-tools.json
+        key: firebase-tools-${{ runner.os }}-${{ hashFiles('frontend/firebase.json', 'frontend/.firebaserc') }}
+        restore-keys: |
+          firebase-tools-${{ runner.os }}-
 
     - name: Google Auth
       if: env.DEPLOY_FRONTEND == 'true'
