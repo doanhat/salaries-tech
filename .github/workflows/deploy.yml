@@ -67,7 +67,9 @@ jobs:
         path: |
           ~/.cache/google-cloud-sdk
           ~/.config/gcloud
-        key: gcloud-sdk-${{ runner.os }}-${{ hashFiles('**/*.yaml') }}
+        key: gcloud-sdk-${{ runner.os }}-${{ hashFiles('.github/workflows/deploy.yml') }}-v1
+        restore-keys: |
+          gcloud-sdk-${{ runner.os }}-v1-
 
     - name: Google Auth
       if: env.DEPLOY_BACKEND == 'true'
@@ -130,7 +132,9 @@ jobs:
         path: |
           ~/.cache/google-cloud-sdk
           ~/.config/gcloud
-        key: gcloud-sdk-${{ runner.os }}-${{ hashFiles('**/*.yaml') }}
+        key: gcloud-sdk-${{ runner.os }}-${{ hashFiles('.github/workflows/deploy.yml') }}-v1
+        restore-keys: |
+          gcloud-sdk-${{ runner.os }}-v1-
 
     - name: Cache Firebase Tools
       uses: actions/cache@v2
