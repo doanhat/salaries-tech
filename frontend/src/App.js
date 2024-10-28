@@ -5,20 +5,23 @@ import Footer from "./components/layout/Footer";
 import SalaryListPage from "./pages/SalaryListPage";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
+import { LanguageProvider } from "./contexts/LanguageContext";
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Header />
-        <main>
-          <Routes>
-            <Route path="/" element={<SalaryListPage />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </Router>
+    <LanguageProvider>
+      <Router>
+        <div className="App">
+          <Header />
+          <main>
+            <Routes>
+              <Route path="/" element={<SalaryListPage />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
+    </LanguageProvider>
   );
 }
 
