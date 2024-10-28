@@ -29,21 +29,21 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@main
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@main
       with:
         python-version: '3.11.4'
 
     - name: Cache Poetry
-      uses: actions/cache@v2
+      uses: actions/cache@main
       with:
         path: ~/.local
         key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
     - name: Cache Python dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@main
       with:
         path: .venv
         key: venv-${{ runner.os }}-python-${{ hashFiles('**/poetry.lock') }}
@@ -62,7 +62,7 @@ jobs:
       run: make test-backend
 
     - name: Cache GCloud SDK
-      uses: actions/cache@v2
+      uses: actions/cache@main
       with:
         path: |
           ~/.cache/google-cloud-sdk
@@ -95,15 +95,15 @@ jobs:
   frontend:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@main
 
     - name: Set up Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@main
       with:
         node-version: '18'
 
     - name: Cache npm dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@main
       with:
         path: ~/.npm
         key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
@@ -127,7 +127,7 @@ jobs:
       run: npm run build
 
     - name: Cache GCloud SDK
-      uses: actions/cache@v2
+      uses: actions/cache@main
       with:
         path: |
           ~/.cache/google-cloud-sdk
@@ -137,7 +137,7 @@ jobs:
           gcloud-sdk-${{ runner.os }}-v1-
 
     - name: Cache Firebase Tools
-      uses: actions/cache@v2
+      uses: actions/cache@main
       with:
         path: ~/.cache/firebase
         key: firebase-tools-${{ runner.os }}-${{ hashFiles('**/firebase.json') }}
