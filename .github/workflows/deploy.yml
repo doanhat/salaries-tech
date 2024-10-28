@@ -35,22 +35,37 @@ jobs:
       uses: actions/setup-python@main
       with:
         python-version: '3.11.4'
+        cache: 'pip'
+
+    - name: Get Poetry cache dir
+      id: poetry-cache
+      run: |
+        echo "dir=$(poetry config cache-dir)" >> $GITHUB_OUTPUT
 
     - name: Cache Poetry
       uses: actions/cache@main
       with:
-        path: ~/.local
-        key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+        path: |
+          ${{ steps.poetry-cache.outputs.dir }}
+          ~/.local/share/pypoetry
+          ~/.local/bin/poetry
+        key: poetry-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+        restore-keys: |
+          poetry-${{ runner.os }}-
 
-    - name: Cache Python dependencies
+    - name: Cache virtual environment
       uses: actions/cache@main
       with:
         path: .venv
-        key: venv-${{ runner.os }}-python-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{ runner.os }}-python-${{ hashFiles('poetry.lock') }}
+        restore-keys: |
+          venv-${{ runner.os }}-python-
 
     - name: Install Poetry
-      if: steps.cache-poetry.outputs.cache-hit != 'true'
-      run: curl -sSL https://install.python-poetry.org | python3 -
+      if: steps.poetry-cache.outputs.cache-hit != 'true'
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        poetry config virtualenvs.in-project true
 
     - name: Install dependencies
       run: poetry install
