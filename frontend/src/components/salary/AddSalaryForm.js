@@ -12,6 +12,7 @@ import {
   RECAPTCHA_SITE_KEY,
 } from "../../utils/api";
 import { capitalizeWords } from "../../utils/stringUtils";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const initialFormData = {
   company_name: null,
@@ -31,7 +32,83 @@ const initialFormData = {
   technical_stacks: [],
 };
 
+const translations = {
+  fr: {
+    title: "Ajouter un Salaire",
+    company_name: "Entreprise",
+    company_type: "Type d'entreprise",
+    company_tags: "Tags d'entreprise",
+    job_titles: "Postes",
+    location: "Localisation",
+    net_salary: "Salaire Net",
+    gross_salary: "Salaire Brut",
+    variables: "Primes",
+    gender: "Genre",
+    gender_value: {
+      male: "Homme",
+      female: "Femme",
+      other: "Autre",
+    },
+    level: "Niveau",
+    experience_years_company: "Exp Entreprise",
+    total_experience_years: "Exp Totale",
+    work_type: "Type de contrat",
+    leave_days: "Jours de congé",
+    technical_stacks: "Stacks techniques",
+    button: {
+      submit: "Ajouter",
+    },
+    placeholder: {
+      select: "Sélectionner",
+      company_name: "Sélectionner ou taper pour ajouter une entreprise",
+      company_tags: "Sélectionner ou taper pour ajouter un tag d'entreprise",
+      job_titles: "Sélectionner ou taper pour ajouter un poste",
+      job_title_selected: "Postes sélectionnés",
+      location: "Sélectionner ou taper pour ajouter une localisation",
+      technical_stacks: "Sélectionner ou taper pour ajouter un stack technique",
+    },
+  },
+  en: {
+    title: "Add Salary",
+    company_name: "Company",
+    company_type: "Company Type",
+    company_tags: "Company Tags",
+    job_titles: "Job Titles",
+    location: "Location",
+    net_salary: "Net Salary",
+    gross_salary: "Gross Salary",
+    variables: "Variables",
+    gender: "Gender",
+    gender_value: {
+      male: "Male",
+      female: "Female",
+      other: "Other",
+    },
+    level: "Level",
+    experience_years_company: "Company Experience",
+    total_experience_years: "Total Experience",
+    work_type: "Work Type",
+    leave_days: "Leave Days",
+    technical_stacks: "Technical Stacks",
+    button: {
+      submit: "Add",
+    },
+    placeholder: {
+      select: "Select",
+      selected: "Selected",
+      company_name: "Select or type to add a company",
+      company_tags: "Select or type to add a company tag",
+      job_titles: "Select or type to add a job title",
+      job_title_selected: "Job titles selected",
+      location: "Select or type to add a location",
+      technical_stacks: "Select or type to add a technical stack",
+    },
+  },
+};
+
 const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isNewCompany, setIsNewCompany] = useState(false);
@@ -179,14 +256,14 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
   return (
     <Modal show={show} onHide={handleClose} size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Add New Salary</Modal.Title>
+        <Modal.Title>{t.title}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
           <Row>
             <Col md={12}>
               <Form.Group className="mb-3">
-                <Form.Label>Company</Form.Label>
+                <Form.Label>{t.company_name}</Form.Label>
                 <CreatableSelect
                   isClearable
                   onChange={(option) =>
@@ -206,7 +283,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   }
                   formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
                   backspaceRemovesValue={true}
-                  placeholder="Select or type to add a company"
+                  placeholder={t.placeholder.company_name}
                 />
                 {errors.company_name && (
                   <Form.Text className="text-danger">
@@ -221,7 +298,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Company Type</Form.Label>
+                  <Form.Label>{t.company_type}</Form.Label>
                   <Select
                     isClearable
                     onChange={(option) =>
@@ -237,12 +314,13 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                         ? createOption(formData.company_type)
                         : null
                     }
+                    placeholder={t.placeholder.select}
                   />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Company Tags</Form.Label>
+                  <Form.Label>{t.company_tags}</Form.Label>
                   <CreatableSelect
                     isMulti
                     isClearable
@@ -259,7 +337,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                     )}
                     formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
                     backspaceRemovesValue={true}
-                    placeholder="Select or type to add a company tag"
+                    placeholder={t.placeholder.company_tags}
                   />
                   {errors.company_tags && (
                     <Form.Text className="text-danger">
@@ -275,7 +353,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>
-                  Job Titles <span className="text-danger">*</span>
+                  {t.job_titles} <span className="text-danger">*</span>
                 </Form.Label>
                 <CreatableSelect
                   isMulti
@@ -289,10 +367,11 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   }
                   value={formData.job_titles.map(createOption)}
                   isOptionDisabled={() => formData.job_titles.length >= 2}
-                  placeholder="Select or type to add a job title"
+                  placeholder={t.placeholder.job_titles}
                 />
                 <Form.Text className="text-muted">
-                  {formData.job_titles.length}/2 job titles selected
+                  {formData.job_titles.length}/2{" "}
+                  {t.placeholder.job_title_selected}
                 </Form.Text>
                 {errors.job_titles && (
                   <Form.Text className="text-danger">
@@ -304,7 +383,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>
-                  Location <span className="text-danger">*</span>
+                  {t.location} <span className="text-danger">*</span>
                 </Form.Label>
                 <CreatableSelect
                   isClearable
@@ -315,7 +394,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   value={
                     formData.location ? createOption(formData.location) : null
                   }
-                  placeholder="Select or type to add a location"
+                  placeholder={t.placeholder.location}
                 />
                 {errors.location && (
                   <Form.Text className="text-danger">
@@ -329,7 +408,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
           <Row>
             <Col md={4}>
               <Form.Group className="mb-3">
-                <Form.Label>Net Salary</Form.Label>
+                <Form.Label>{t.net_salary}</Form.Label>
                 <Form.Control
                   type="number"
                   name="net_salary"
@@ -341,7 +420,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
             <Col md={4}>
               <Form.Group className="mb-3">
                 <Form.Label>
-                  Gross Salary <span className="text-danger">*</span>
+                  {t.gross_salary} <span className="text-danger">*</span>
                 </Form.Label>
                 <Form.Control
                   type="number"
@@ -359,7 +438,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
             </Col>
             <Col md={4}>
               <Form.Group className="mb-3">
-                <Form.Label>Variables</Form.Label>
+                <Form.Label>{t.variables}</Form.Label>
                 <Form.Control
                   type="number"
                   name="variables"
@@ -373,22 +452,23 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Gender</Form.Label>
+                <Form.Label>{t.gender}</Form.Label>
                 <Select
                   isClearable
                   onChange={(option) => handleSelectChange("gender", option)}
                   options={[
-                    { value: "male", label: "Male" },
-                    { value: "female", label: "Female" },
-                    { value: "other", label: "Other" },
+                    { value: "male", label: t.gender_value.male },
+                    { value: "female", label: t.gender_value.female },
+                    { value: "other", label: t.gender_value.other },
                   ]}
                   value={formData.gender ? createOption(formData.gender) : null}
+                  placeholder={t.placeholder.select}
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Level</Form.Label>
+                <Form.Label>{t.level}</Form.Label>
                 <Select
                   isClearable
                   onChange={(option) => handleSelectChange("level", option)}
@@ -396,6 +476,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                     choices.levels ? choices.levels.map(createOption) : []
                   }
                   value={formData.level ? createOption(formData.level) : null}
+                  placeholder={t.placeholder.select}
                 />
               </Form.Group>
             </Col>
@@ -404,7 +485,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Years at Company</Form.Label>
+                <Form.Label>{t.experience_years_company}</Form.Label>
                 <Form.Control
                   type="number"
                   name="experience_years_company"
@@ -415,7 +496,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Total Years of Experience</Form.Label>
+                <Form.Label>{t.total_experience_years}</Form.Label>
                 <Form.Control
                   type="number"
                   name="total_experience_years"
@@ -429,7 +510,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Work Type</Form.Label>
+                <Form.Label>{t.work_type}</Form.Label>
                 <Select
                   isClearable
                   onChange={(option) => handleSelectChange("work_type", option)}
@@ -441,12 +522,13 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   value={
                     formData.work_type ? createOption(formData.work_type) : null
                   }
+                  placeholder={t.placeholder.select}
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Leave Days</Form.Label>
+                <Form.Label>{t.leave_days}</Form.Label>
                 <Form.Control
                   type="number"
                   name="leave_days"
@@ -460,7 +542,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Technical Stacks</Form.Label>
+                <Form.Label>{t.technical_stacks}</Form.Label>
                 <CreatableSelect
                   isMulti
                   isClearable
@@ -479,7 +561,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   )}
                   formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
                   backspaceRemovesValue={true}
-                  placeholder="Select or type to add a technical stack"
+                  placeholder={t.placeholder.technical_stacks}
                 />
                 {errors.technical_stacks && (
                   <Form.Text className="text-danger">
@@ -507,7 +589,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
               Object.values(errors).some((error) => error !== null)
             }
           >
-            Submit
+            {t.button.submit}
           </Button>
         </Form>
       </Modal.Body>

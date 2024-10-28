@@ -29,7 +29,7 @@ import { debounce } from "lodash";
 import { capitalizeWords } from "../utils/stringUtils";
 import { useMediaQuery } from "react-responsive";
 import styled from "styled-components";
-
+import { useLanguage } from "../contexts/LanguageContext";
 import "react-datepicker/dist/react-datepicker.css";
 
 // Add these styled components
@@ -94,7 +94,172 @@ const ButtonContainer = styled(Container)`
   margin-bottom: 20px;
 `;
 
+const translations = {
+  fr: {
+    table: {
+      company: "Entreprise",
+      location: "Localisation",
+      job_title: "Poste",
+      gross_salary: "Salaire Brut",
+      net_salary: "Salaire Net",
+      variables: "Primes",
+      level: "Niveau",
+      work_type: "Type de contrat",
+      experience_years_company: "Exp Entreprise",
+      total_experience_years: "Exp Totale",
+      company_type: "Type d'entreprise",
+      technical_stacks: "Stacks techniques",
+      tags: "Tags",
+      gender: "Genre",
+      gender_value: {
+        male: "Homme",
+        female: "Femme",
+        other: "Autre",
+      },
+      added_date: "Date d'ajout",
+      leave_days: "Jours de congé",
+      actions: {
+        name: "Actions",
+        title: "Détails",
+      },
+    },
+    filters: {
+      title: "Filtres",
+      companies: "Entreprises",
+      tags: "Tags",
+      company_types: "Types d'entreprises",
+      job_titles: "Postes",
+      locations: "Localisations",
+      genders: "Genres",
+      gender_value: {
+        male: "Homme",
+        female: "Femme",
+        other: "Autre",
+      },
+      levels: "Niveaux",
+      work_types: "Types de contrat",
+      net_salary_min: "Salaire Net Min",
+      net_salary_max: "Salaire Net Max",
+      gross_salary_min: "Salaire Brut Min",
+      gross_salary_max: "Salaire Brut Max",
+      variables_min: "Primes Min",
+      variables_max: "Primes Max",
+      experience_years_company_min: "Exp Entreprise Min",
+      experience_years_company_max: "Exp Entreprise Max",
+      total_experience_years_min: "Exp Totale Min",
+      total_experience_years_max: "Exp Totale Max",
+      leave_days_min: "Jours de congé Min",
+      leave_days_max: "Jours de congé Max",
+      added_date_min: "Date d'ajout Min",
+      added_date_max: "Date d'ajout Max",
+      technical_stacks: "Stacks techniques",
+    },
+    buttons: {
+      add_salary: "Ajouter un salaire",
+      filters: "Filtres",
+      apply_filters: "Appliquer les filtres",
+      reset_filters: "Réinitialiser les filtres",
+      show_charts: {
+        on: "Afficher les graphiques",
+        off: "Masquer les graphiques",
+      },
+      show_results: "Afficher",
+      close: "Fermer",
+    },
+    errors: {
+      no_salaries: "Aucun salaire trouvé.",
+      add: "Erreur lors de l'ajout du salaire. Veuillez réessayer.",
+    },
+    info: {
+      no_filters_applied: "Aucun filtre appliqué.",
+      loading: "Chargement des données...",
+    },
+  },
+  en: {
+    table: {
+      company: "Company",
+      location: "Location",
+      job_title: "Job Title",
+      gross_salary: "Gross Salary",
+      net_salary: "Net Salary",
+      variables: "Variables",
+      level: "Level",
+      work_type: "Work Type",
+      experience_years_company: "Company Exp",
+      total_experience_years: "Total Exp",
+      company_type: "Company Type",
+      technical_stacks: "Technical Stacks",
+      tags: "Tags",
+      gender: "Gender",
+      gender_value: {
+        male: "Male",
+        female: "Female",
+        other: "Other",
+      },
+      added_date: "Added Date",
+      leave_days: "Leave Days",
+      actions: {
+        name: "Actions",
+        title: "Details",
+      },
+    },
+    filters: {
+      title: "Filters",
+      companies: "Companies",
+      tags: "Tags",
+      company_types: "Company Types",
+      job_titles: "Job Titles",
+      locations: "Locations",
+      genders: "Genders",
+      gender_value: {
+        male: "Male",
+        female: "Female",
+        other: "Other",
+      },
+      levels: "Levels",
+      work_types: "Work Types",
+      net_salary_min: "Net Salary Min",
+      net_salary_max: "Net Salary Max",
+      gross_salary_min: "Gross Salary Min",
+      gross_salary_max: "Gross Salary Max",
+      variables_min: "Variables Min",
+      variables_max: "Variables Max",
+      experience_years_company_min: "Company Exp Min",
+      experience_years_company_max: "Company Exp Max",
+      total_experience_years_min: "Total Exp Min",
+      total_experience_years_max: "Total Exp Max",
+      leave_days_min: "Leave Days Min",
+      leave_days_max: "Leave Days Max",
+      added_date_min: "Added Date Min",
+      added_date_max: "Added Date Max",
+      technical_stacks: "Technical Stacks",
+    },
+    buttons: {
+      add_salary: "Add a Salary",
+      filters: "Filters",
+      apply_filters: "Apply Filters",
+      reset_filters: "Reset Filters",
+      show_charts: {
+        on: "Show Charts",
+        off: "Hide Charts",
+      },
+      show_results: "Show",
+      close: "Close",
+    },
+    errors: {
+      no_salaries: "No salaries found.",
+      add: "Error adding salary. Please try again.",
+    },
+    info: {
+      no_filters_applied: "No filters applied.",
+      loading: "Loading data...",
+    },
+  },
+};
+
 const SalaryListPage = () => {
+  const { language } = useLanguage();
+  const t = translations[language];
   const [salaries, setSalaries] = useState([]);
   const [choices, setChoices] = useState({});
   const [filters, setFilters] = useState({
@@ -139,9 +304,7 @@ const SalaryListPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [locationStats, setLocationStats] = useState([]);
   const [topLocationsSalary, setTopLocationsSalary] = useState([]);
-  const [showCharts, setShowCharts] = useState(false); // Set to false by default
-
-  const isMobile = useMediaQuery({ maxWidth: 767 });
+  const [showCharts, setShowCharts] = useState(true); // Set to true by default
 
   const fetchSalaries = useCallback(
     async (activeFilters = filters) => {
@@ -609,7 +772,7 @@ const SalaryListPage = () => {
             size="sm"
             onClick={() => handleShowDetails(salary)}
           >
-            Details
+            {t.table.actions.title}
           </Button>
         </StickyCell>
       </tr>
@@ -645,7 +808,7 @@ const SalaryListPage = () => {
         variant="outline-primary"
         onClick={() => setShowCharts(!showCharts)}
       >
-        {showCharts ? "Hide Charts" : "Show Charts"}
+        {showCharts ? t.buttons.show_charts.off : t.buttons.show_charts.on}
       </ToggleButton>
 
       {/* Charts */}
@@ -667,17 +830,19 @@ const SalaryListPage = () => {
         <Row className="gy-2 justify-content-start align-items-center">
           <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <Button variant="primary" onClick={handleOpenAddSalaryModal}>
-              Add Salary
+              {t.buttons.add_salary}
             </Button>
           </Col>
           <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <Button variant="primary" onClick={() => setShowFilterModal(true)}>
-              Filters
+              {t.buttons.filters}
             </Button>
           </Col>
           <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <Dropdown as={ButtonGroup}>
-              <Button variant="primary">Show: {itemsPerPage}</Button>
+              <Button variant="primary">
+                {t.buttons.show_results}: {itemsPerPage}
+              </Button>
               <Dropdown.Toggle
                 split
                 variant="primary"
@@ -725,7 +890,7 @@ const SalaryListPage = () => {
         contentClassName="h-100"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Salary Filters</Modal.Title>
+          <Modal.Title>{t.filters.title}</Modal.Title>
         </Modal.Header>
         <Modal.Body
           style={{ ...fullScreenModalStyle.modalContent, overflowY: "auto" }}
@@ -736,8 +901,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.company_names)}
                   onChange={handleMultiSelectChange}
-                  placeholder="Companies"
-                  title="Select Companies"
+                  placeholder={t.filters.companies}
+                  title={t.filters.companies}
                   value={pendingFilters.company_names || []}
                   name="company_names"
                 />
@@ -746,8 +911,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.company_tags || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder="Tags"
-                  title="Select Tags"
+                  placeholder={t.filters.tags}
+                  title={t.filters.tags}
                   value={pendingFilters.company_tags || []}
                   name="company_tags"
                 />
@@ -756,8 +921,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.company_types || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder="Company Types"
-                  title="Select Company Types"
+                  placeholder={t.filters.company_types}
+                  title={t.filters.company_types}
                   value={pendingFilters.company_types || []}
                   name="company_types"
                 />
@@ -766,8 +931,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.job_titles || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder="Job Titles"
-                  title="Select Job Titles"
+                  placeholder={t.filters.job_titles}
+                  title={t.filters.job_titles}
                   value={pendingFilters.job_titles || []}
                   name="job_titles"
                 />
@@ -776,8 +941,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.technical_stacks || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder="Technical Stacks"
-                  title="Select Technical Stacks"
+                  placeholder={t.filters.technical_stacks}
+                  title={t.filters.technical_stacks}
                   value={pendingFilters.technical_stacks || []}
                   name="technical_stacks"
                   isMulti
@@ -787,8 +952,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.locations || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder="Locations"
-                  title="Select Locations"
+                  placeholder={t.filters.locations}
+                  title={t.filters.locations}
                   value={pendingFilters.locations || []}
                   name="locations"
                   isCreatable={true} // Allow creating new options
@@ -804,10 +969,14 @@ const SalaryListPage = () => {
               </Col>
               <Col md={4}>
                 <SelectWithTooltip
-                  options={genderOptions}
+                  options={[
+                    { value: "male", label: t.filters.gender_value.male },
+                    { value: "female", label: t.filters.gender_value.female },
+                    { value: "other", label: t.filters.gender_value.other },
+                  ]}
                   onChange={handleMultiSelectChange}
-                  placeholder="Gender"
-                  title="Select Gender"
+                  placeholder={t.filters.genders}
+                  title={t.filters.genders}
                   value={pendingFilters.genders}
                   name="genders"
                 />
@@ -816,8 +985,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.levels || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder="Levels"
-                  title="Select Levels"
+                  placeholder={t.filters.levels}
+                  title={t.filters.levels}
                   value={pendingFilters.levels || []}
                   name="levels"
                 />
@@ -826,8 +995,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.work_types || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder="Work Types"
-                  title="Select Work Types"
+                  placeholder={t.filters.work_types}
+                  title={t.filters.work_types}
                   value={pendingFilters.work_types || []}
                   name="work_types"
                 />
@@ -835,120 +1004,120 @@ const SalaryListPage = () => {
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Min Net Salary"
+                  placeholder={t.filters.net_salary_min}
                   name="net_salary_min"
                   onChange={handleInputChangeImmediate}
-                  title="Minimum Net Salary"
+                  title={t.filters.net_salary_min}
                   value={pendingFilters.net_salary_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Max Net Salary"
+                  placeholder={t.filters.net_salary_max}
                   name="net_salary_max"
                   onChange={handleInputChangeImmediate}
-                  title="Maximum Net Salary"
+                  title={t.filters.net_salary_max}
                   value={pendingFilters.net_salary_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Min Gross Salary"
+                  placeholder={t.filters.gross_salary_min}
                   name="gross_salary_min"
                   onChange={handleInputChangeImmediate}
-                  title="Minimum Gross Salary"
+                  title={t.filters.gross_salary_min}
                   value={pendingFilters.gross_salary_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Max Gross Salary"
+                  placeholder={t.filters.gross_salary_max}
                   name="gross_salary_max"
                   onChange={handleInputChangeImmediate}
-                  title="Maximum Gross Salary"
+                  title={t.filters.gross_salary_max}
                   value={pendingFilters.gross_salary_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Min Variables"
+                  placeholder={t.filters.variables_min}
                   name="variables_min"
                   onChange={handleInputChangeImmediate}
-                  title="Minimum Variables"
+                  title={t.filters.variables_min}
                   value={pendingFilters.variables_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Max Variables"
+                  placeholder={t.filters.variables_max}
                   name="variables_max"
                   onChange={handleInputChangeImmediate}
-                  title="Maximum Variables"
+                  title={t.filters.variables_max}
                   value={pendingFilters.variables_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Min Company Experience"
+                  placeholder={t.filters.experience_years_company_min}
                   name="experience_years_company_min"
                   onChange={handleInputChangeImmediate}
-                  title="Minimum Company Experience"
+                  title={t.filters.experience_years_company_min}
                   value={pendingFilters.experience_years_company_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Max Company Experience"
+                  placeholder={t.filters.experience_years_company_max}
                   name="experience_years_company_max"
                   onChange={handleInputChangeImmediate}
-                  title="Maximum Company Experience"
+                  title={t.filters.experience_years_company_max}
                   value={pendingFilters.experience_years_company_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Min Total Experience"
+                  placeholder={t.filters.total_experience_years_min}
                   name="total_experience_years_min"
                   onChange={handleInputChangeImmediate}
-                  title="Minimum Total Experience"
+                  title={t.filters.total_experience_years_min}
                   value={pendingFilters.total_experience_years_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Max Total Experience"
+                  placeholder={t.filters.total_experience_years_max}
                   name="total_experience_years_max"
                   onChange={handleInputChangeImmediate}
-                  title="Maximum Total Experience"
+                  title={t.filters.total_experience_years_max}
                   value={pendingFilters.total_experience_years_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Min Leave Days"
+                  placeholder={t.filters.leave_days_min}
                   name="leave_days_min"
                   onChange={handleInputChangeImmediate}
-                  title="Minimum Leave Days"
+                  title={t.filters.leave_days_min}
                   value={pendingFilters.leave_days_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder="Max Leave Days"
+                  placeholder={t.filters.leave_days_max}
                   name="leave_days_max"
                   onChange={handleInputChangeImmediate}
-                  title="Maximum Leave Days"
+                  title={t.filters.leave_days_max}
                   value={pendingFilters.leave_days_max}
                 />
               </Col>
@@ -957,7 +1126,7 @@ const SalaryListPage = () => {
                   name="min_added_date"
                   selected={dateFilters.min_added_date}
                   onChange={(date) => handleDateChange(date, "min_added_date")}
-                  title="Min Added Date"
+                  title={t.filters.added_date_min}
                 />
               </Col>
               <Col md={4}>
@@ -965,7 +1134,7 @@ const SalaryListPage = () => {
                   name="max_added_date"
                   selected={dateFilters.max_added_date}
                   onChange={(date) => handleDateChange(date, "max_added_date")}
-                  title="Max Added Date"
+                  title={t.filters.added_date_max}
                 />
               </Col>
             </Row>
@@ -976,17 +1145,17 @@ const SalaryListPage = () => {
                   onClick={() => setShowFilterModal(false)}
                   data-testid="close-filter-modal"
                 >
-                  Close
+                  {t.buttons.close}
                 </Button>
                 <Button variant="primary" type="submit" className="ms-2">
-                  Apply Filters
+                  {t.buttons.apply_filters}
                 </Button>
                 <Button
                   variant="outline-secondary"
                   onClick={resetFilters}
                   className="ms-2"
                 >
-                  Reset Filters
+                  {t.buttons.reset_filters}
                 </Button>
               </Col>
             </Row>
@@ -997,7 +1166,7 @@ const SalaryListPage = () => {
       {isLoading && (
         <LoadingOverlay>
           <div className="spinner-border" role="status">
-            <span className="visually-hidden">Loading...</span>
+            <span className="visually-hidden">{t.info.loading} ...</span>
           </div>
         </LoadingOverlay>
       )}
@@ -1007,31 +1176,34 @@ const SalaryListPage = () => {
           <thead>
             <tr>
               <StickyCell as="th" left="0">
-                Company
+                {t.table.company}
               </StickyCell>
-              <SortableHeader column="location" label="Location" />
-              <th>Job Title</th>
-              <SortableHeader column="gross_salary" label="Gross Salary" />
-              <SortableHeader column="net_salary" label="Net Salary" />
-              <SortableHeader column="variables" label="Variables" />
-              <th>Level</th>
-              <th>Work Type</th>
+              <SortableHeader column="location" label={t.table.location} />
+              <th>{t.table.job_title}</th>
+              <SortableHeader
+                column="gross_salary"
+                label={t.table.gross_salary}
+              />
+              <SortableHeader column="net_salary" label={t.table.net_salary} />
+              <SortableHeader column="variables" label={t.table.variables} />
+              <th>{t.table.level}</th>
+              <th>{t.table.work_type}</th>
               <SortableHeader
                 column="experience_years_company"
-                label="Company Exp"
+                label={t.table.experience_years_company}
               />
               <SortableHeader
                 column="total_experience_years"
-                label="Total Exp"
+                label={t.table.total_experience_years}
               />
-              <th>Company Type</th>
-              <th>Tech Stacks</th>
-              <th>Tags</th>
-              <th>Gender</th>
-              <SortableHeader column="added_date" label="Added Date" />
-              <SortableHeader column="leave_days" label="Leave Days" />
+              <th>{t.table.company_type}</th>
+              <th>{t.table.technical_stacks}</th>
+              <th>{t.table.tags}</th>
+              <th>{t.table.gender}</th>
+              <SortableHeader column="added_date" label={t.table.added_date} />
+              <SortableHeader column="leave_days" label={t.table.leave_days} />
               <StickyCell as="th" right="0">
-                Actions
+                {t.table.actions.name}
               </StickyCell>
             </tr>
           </thead>
@@ -1044,7 +1216,7 @@ const SalaryListPage = () => {
               salaries.map(renderSalaryRow)
             ) : (
               <tr>
-                <td colSpan="17">No salaries found</td>
+                <td colSpan="17">{t.errors.no_salaries}</td>
               </tr>
             )}
           </tbody>
@@ -1053,89 +1225,89 @@ const SalaryListPage = () => {
 
       <Modal show={showDetailsModal} onHide={handleCloseDetails}>
         <Modal.Header closeButton>
-          <Modal.Title>Salary Details</Modal.Title>
+          <Modal.Title>{t.table.actions.title}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedSalary && (
             <div>
               <p>
-                <strong>Company:</strong>{" "}
+                <strong>{t.table.company}:</strong>{" "}
                 {selectedSalary.company?.name || "N/A"}
               </p>
               <p>
-                <strong>Tags:</strong>{" "}
+                <strong>{t.table.tags}:</strong>{" "}
                 {selectedSalary.company?.tags
                   ?.map((tag) => capitalizeWords(tag.name))
                   .join(", ") || "N/A"}
               </p>
               <p>
-                <strong>Company Type:</strong>{" "}
+                <strong>{t.table.company_type}:</strong>{" "}
                 {capitalizeWords(selectedSalary.company?.type) || "N/A"}
               </p>
               <p>
-                <strong>Job Titles:</strong>{" "}
+                <strong>{t.table.job_title}:</strong>{" "}
                 {selectedSalary.jobs
                   ?.map((job) => capitalizeWords(job.title))
                   .join(", ") || "N/A"}
               </p>
               <p>
-                <strong>Technical Stacks:</strong>{" "}
+                <strong>{t.table.technical_stacks}:</strong>{" "}
                 {selectedSalary.technical_stacks
                   ?.map((stack) => capitalizeWords(stack.name))
                   .join(", ") || "N/A"}
               </p>
               <p>
-                <strong>Location:</strong>{" "}
+                <strong>{t.table.location}:</strong>{" "}
                 {capitalizeWords(selectedSalary.location) || "N/A"}
               </p>
               <p>
-                <strong>Net Salary:</strong>{" "}
+                <strong>{t.table.net_salary}:</strong>{" "}
                 {selectedSalary.net_salary !== null
                   ? selectedSalary.net_salary
                   : "N/A"}
               </p>
               <p>
-                <strong>Gross Salary:</strong>{" "}
+                <strong>{t.table.gross_salary}:</strong>{" "}
                 {selectedSalary.gross_salary !== null
                   ? selectedSalary.gross_salary
                   : "N/A"}
               </p>
               <p>
-                <strong>Variables:</strong>{" "}
+                <strong>{t.table.variables}:</strong>{" "}
                 {selectedSalary.variables !== null
                   ? selectedSalary.variables
                   : "N/A"}
               </p>
               <p>
-                <strong>Gender:</strong>{" "}
+                <strong>{t.table.gender}:</strong>{" "}
                 {capitalizeWords(selectedSalary.gender) || "N/A"}
               </p>
               <p>
-                <strong>Company Experience:</strong>{" "}
+                <strong>{t.table.experience_years_company}:</strong>{" "}
                 {selectedSalary.experience_years_company !== null
                   ? selectedSalary.experience_years_company
                   : "N/A"}
               </p>
               <p>
-                <strong>Total Experience:</strong>{" "}
+                <strong>{t.table.total_experience_years}:</strong>{" "}
                 {selectedSalary.total_experience_years !== null
                   ? selectedSalary.total_experience_years
                   : "N/A"}
               </p>
               <p>
-                <strong>Level:</strong>{" "}
+                <strong>{t.table.level}:</strong>{" "}
                 {capitalizeWords(selectedSalary.level) || "N/A"}
               </p>
               <p>
-                <strong>Work Type:</strong>{" "}
+                <strong>{t.table.work_type}:</strong>{" "}
                 {capitalizeWords(selectedSalary.work_type) || "N/A"}
               </p>
               <p>
-                <strong>Added Date:</strong>{" "}
+                <strong>{t.table.added_date}:</strong>{" "}
                 {selectedSalary.added_date || "N/A"}
               </p>
               <p>
-                <strong>Leave Days:</strong>{" "}
+                <strong>{t.table.leave_days}:</strong>{" "}
                 {selectedSalary.leave_days !== null
                   ? selectedSalary.leave_days
                   : "N/A"}
@@ -1145,7 +1317,7 @@ const SalaryListPage = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseDetails}>
-            Close
+            {t.buttons.close}
           </Button>
         </Modal.Footer>
       </Modal>

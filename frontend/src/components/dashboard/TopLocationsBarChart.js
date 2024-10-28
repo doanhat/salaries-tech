@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import styled from "styled-components";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const ChartContainer = styled.div`
   width: 100%;
@@ -26,12 +27,49 @@ const StyledResponsiveContainer = styled(ResponsiveContainer)`
   }
 `;
 
+const translations = {
+  fr: {
+    title: "Top 10 des Localisations par Salaire Moyen",
+    tooltip: {
+      salary: "Salaire moyen",
+    },
+  },
+  en: {
+    title: "Top 10 Locations by Average Salary",
+    tooltip: {
+      salary: "Average salary",
+    },
+  },
+};
+
+const CustomTooltip = ({ active, payload, label }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
+  if (active && payload && payload.length) {
+    return (
+      <div
+        style={{
+          backgroundColor: "#fff",
+          padding: "10px",
+          border: "1px solid #ccc",
+        }}
+      >
+        <p>{label}</p>
+        <p>{`${t.tooltip.salary}: ${payload[0].value.toLocaleString()}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const TopLocationsSalaryBarChart = ({ data }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   return (
     <ChartContainer>
-      <h3 style={{ textAlign: "center" }}>
-        Top 10 Locations by Average Salary
-      </h3>
+      <h3 style={{ textAlign: "center" }}>{t.title}</h3>
       <StyledResponsiveContainer>
         <BarChart
           data={data}
@@ -51,7 +89,7 @@ const TopLocationsSalaryBarChart = ({ data }) => {
             width={90}
             tick={{ fontSize: 12 }}
           />
-          <Tooltip />
+          <Tooltip content={<CustomTooltip />} />
           <Bar dataKey="average_salary" fill="#8884d8" />
         </BarChart>
       </StyledResponsiveContainer>

@@ -1,15 +1,47 @@
 import React from "react";
-import { Navbar, Nav, Container } from "react-bootstrap";
+import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const Header = () => {
+  const { language, toggleLanguage } = useLanguage();
+
+  const translations = {
+    fr: {
+      brand: "Salary Tech",
+      inspiredBy: "Inspiré par",
+      languages: {
+        current: "Français",
+        options: {
+          en: "Anglais",
+          fr: "Français",
+        },
+      },
+      github: "GitHub",
+    },
+    en: {
+      brand: "Salary Tech",
+      inspiredBy: "Inspired by",
+      languages: {
+        current: "English",
+        options: {
+          en: "English",
+          fr: "French",
+        },
+      },
+      github: "GitHub",
+    },
+  };
+
+  const t = translations[language];
+
   return (
     <Navbar bg="light" expand="lg">
       <Container>
         <Navbar.Brand as={Link} to="/">
-          Salary Tech
+          {t.brand}
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
@@ -19,17 +51,28 @@ const Header = () => {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Inspired by{" "}
+              {t.inspiredBy}{" "}
               <span style={{ color: "red" }}>https://salaires.dev/</span>
             </Nav.Link>
           </Nav>
           <Nav>
+            <NavDropdown title={t.languages.current} id="language-dropdown">
+              {Object.entries(t.languages.options).map(([code, name]) => (
+                <NavDropdown.Item
+                  key={code}
+                  onClick={() => toggleLanguage(code)}
+                  active={language === code}
+                >
+                  {name}
+                </NavDropdown.Item>
+              ))}
+            </NavDropdown>
             <Nav.Link
               href="https://github.com/doanhat/salaries-tech"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FontAwesomeIcon icon={faGithub} /> GitHub
+              <FontAwesomeIcon icon={faGithub} /> {t.github}
             </Nav.Link>
           </Nav>
         </Navbar.Collapse>

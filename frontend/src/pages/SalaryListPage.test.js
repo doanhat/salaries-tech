@@ -1,19 +1,28 @@
-const React = require("react");
-const {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} = require("@testing-library/react");
-require("@testing-library/jest-dom");
-const SalaryListPage = require("./SalaryListPage").default;
+import React from "react";
+import { render, screen, waitFor, act } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import SalaryListPage from "./SalaryListPage";
+import { LanguageProvider } from "../contexts/LanguageContext";
 
-// Mock the entire api module
+// Mock the api module
 jest.mock("../utils/api", () => ({
   getSalaries: jest.fn(),
   getChoices: jest.fn(),
   getLocationStats: jest.fn(),
   getTopLocationsByAverageSalary: jest.fn(),
+}));
+
+// Mock the LanguageContext
+jest.mock("../contexts/LanguageContext", () => ({
+  LanguageProvider: ({ children, initialLanguage }) => (
+    <div data-testid="language-provider" data-language={initialLanguage}>
+      {children}
+    </div>
+  ),
+  useLanguage: () => ({
+    language: "en",
+    toggleLanguage: jest.fn(),
+  }),
 }));
 
 const {
@@ -25,6 +34,8 @@ const {
 
 describe("SalaryListPage", () => {
   beforeEach(() => {
+    jest.clearAllMocks();
+
     getSalaries.mockResolvedValue({
       results: [],
       total: 0,
@@ -39,25 +50,41 @@ describe("SalaryListPage", () => {
       levels: [],
       work_types: [],
     });
-    getLocationStats.mockResolvedValue({});
-    getTopLocationsByAverageSalary.mockResolvedValue({});
+    getLocationStats.mockResolvedValue({ chart_data: [] });
+    getTopLocationsByAverageSalary.mockResolvedValue([]);
   });
 
-  test("renders SalaryListPage component", async () => {
-    render(<SalaryListPage />);
-
-    // Check if the main elements are rendered
-    expect(
-      screen.getByRole("button", { name: "Add Salary" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Filters")).toBeInTheDocument();
-
-    // Wait for the initial data to load
-    await waitFor(() => {
-      expect(getSalaries).toHaveBeenCalledTimes(1);
-      expect(getChoices).toHaveBeenCalledTimes(1);
-      expect(getLocationStats).toHaveBeenCalledTimes(1);
-      expect(getTopLocationsByAverageSalary).toHaveBeenCalledTimes(1);
+  test("renders SalaryListPage component in English", async () => {
+    await act(async () => {
+      render(
+        <LanguageProvider initialLanguage="en">
+          <SalaryListPage />
+        </LanguageProvider>,
+      );
     });
+
+    // Wait for all initial data fetching to complete
+    await act(async () => {
+      await Promise.all([
+        getSalaries.mock.results[0].value,
+        getChoices.mock.results[0].value,
+        getLocationStats.mock.results[0].value,
+        getTopLocationsByAverageSalary.mock.results[0].value,
+      ]);
+    });
+
+    // Verify UI elements
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /add a salary/i }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/filters/i)).toBeInTheDocument();
+    });
+
+    // Verify API calls
+    expect(getSalaries).toHaveBeenCalledTimes(1);
+    expect(getChoices).toHaveBeenCalledTimes(1);
+    expect(getLocationStats).toHaveBeenCalledTimes(1);
+    expect(getTopLocationsByAverageSalary).toHaveBeenCalledTimes(1);
   });
 });

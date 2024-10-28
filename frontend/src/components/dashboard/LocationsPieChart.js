@@ -1,6 +1,7 @@
 import React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import styled from "styled-components";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const COLORS = [
   "#0088FE",
@@ -94,6 +95,17 @@ const renderCustomizedLabel = ({
   );
 };
 
+const translations = {
+  fr: {
+    title: "Distribution des Salaires par Localisation",
+    total: "Total",
+  },
+  en: {
+    title: "Salary Distribution by Location",
+    total: "Total",
+  },
+};
+
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -114,13 +126,13 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 const LocationPieChart = ({ data }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
   const total = data.reduce((sum, entry) => sum + entry.value, 0);
 
   return (
     <ChartContainer>
-      <h3 style={{ textAlign: "center", marginBottom: "10px" }}>
-        Salary Distribution by Location
-      </h3>
+      <h3 style={{ textAlign: "center", marginBottom: "10px" }}>{t.title}</h3>
       <ChartWrapper>
         <PieChartWrapper>
           <ResponsiveContainer>
@@ -151,7 +163,7 @@ const LocationPieChart = ({ data }) => {
                 dominantBaseline="middle"
                 fontSize="16"
               >
-                Total: {total}
+                {t.total}: {total}
               </text>
             </PieChart>
           </ResponsiveContainer>
