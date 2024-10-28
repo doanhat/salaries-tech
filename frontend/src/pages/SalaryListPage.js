@@ -304,7 +304,7 @@ const SalaryListPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [locationStats, setLocationStats] = useState([]);
   const [topLocationsSalary, setTopLocationsSalary] = useState([]);
-  const [showCharts, setShowCharts] = useState(true); // Set to true by default
+  const [showCharts, setShowCharts] = useState(false); // Set to true by default
 
   const fetchSalaries = useCallback(
     async (activeFilters = filters) => {
