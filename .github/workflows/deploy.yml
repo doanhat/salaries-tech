@@ -69,14 +69,20 @@ jobs:
           ~/.config/gcloud
         key: gcloud-sdk-${{ runner.os }}-${{ hashFiles('**/*.yaml') }}
 
+    - name: Google Auth
+      if: env.DEPLOY_BACKEND == 'true'
+      id: auth
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
     - name: Set up Cloud SDK
       if: env.DEPLOY_BACKEND == 'true'
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
         install_components: 'gke-gcloud-auth-plugin'
-        cache: true
 
     - name: Deploy Backend and Set URL
       if: env.DEPLOY_BACKEND == 'true'
@@ -132,14 +138,20 @@ jobs:
         path: ~/.cache/firebase
         key: firebase-tools-${{ runner.os }}-${{ hashFiles('**/firebase.json') }}
 
+    - name: Google Auth
+      if: env.DEPLOY_FRONTEND == 'true'
+      id: auth
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
     - name: Set up Cloud SDK
       if: env.DEPLOY_FRONTEND == 'true'
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
         install_components: 'beta'
-        cache: true
 
     - name: Install Firebase CLI
       if: env.DEPLOY_FRONTEND == 'true'
