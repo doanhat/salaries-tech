@@ -116,7 +116,7 @@ def sample_salary(test_db):
         net_salary=40000,
         added_date=date(2024, 10, 19),
         location="New York",
-        variables=5000,
+        bonus=5000,
         total_experience_years=2,
         leave_days=20,
         experience_years_company=1,

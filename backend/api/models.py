@@ -104,7 +104,7 @@ class SalaryDB(Base):
     location = Column(String, nullable=False)
     net_salary = Column(Float, nullable=True)
     gross_salary = Column(Float, nullable=False)
-    variables = Column(Float, nullable=True)
+    bonus = Column(Float, nullable=True)
     gender = Column(String, nullable=True)
     experience_years_company = Column(Integer, nullable=True)
     total_experience_years = Column(Integer, nullable=True)
@@ -157,7 +157,7 @@ class Salary(BaseModel):
     location: str
     net_salary: Optional[float] = None
     gross_salary: float
-    variables: Optional[float] = None
+    bonus: Optional[float] = None
     gender: Optional[str] = None
     experience_years_company: Optional[int] = None
     total_experience_years: Optional[int] = None

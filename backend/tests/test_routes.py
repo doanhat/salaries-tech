@@ -39,7 +39,7 @@ def test_create_salary(client: TestClient, monkeypatch):
         "added_date": "2024-10-19",
         "location": "New York",
         "jobs": [{"title": "Software Engineer"}],
-        "variables": 5000,
+        "bonus": 5000,
         "total_experience_years": 2,
         "company": {"name": "Tech Corp", "type": "startup", "tags": [{"name": "tech"}]},
         "leave_days": 20,
@@ -95,7 +95,7 @@ def test_create_salary(client: TestClient, monkeypatch):
         assert response_data["work_type"] == salary_data["work_type"]
         assert response_data["net_salary"] == salary_data["net_salary"]
         assert response_data["location"].lower() == salary_data["location"].lower()
-        assert response_data["variables"] == salary_data["variables"]
+        assert response_data["bonus"] == salary_data["bonus"]
         assert (
             response_data["total_experience_years"]
             == salary_data["total_experience_years"]

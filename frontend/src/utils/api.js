@@ -97,7 +97,7 @@ export const addSalary = async (salaryData, captchaToken, userAgent) => {
         ? parseFloat(salaryData.net_salary)
         : null,
       gross_salary: parseFloat(salaryData.gross_salary),
-      variables: salaryData.variables ? parseFloat(salaryData.variables) : null,
+      bonus: salaryData.bonus ? parseFloat(salaryData.bonus) : null,
       experience_years_company: salaryData.experience_years_company
         ? parseInt(salaryData.experience_years_company)
         : null,
