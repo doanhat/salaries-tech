@@ -84,11 +84,13 @@ create-dev-data:
 replace-db:
 	@echo "Replacing salaries.db with salaries_dev_data.db..."
 	@if [ -f backend/salaries_dev_data.db ]; then \
-		rm -f backend/salaries.db backend/salaries.db-client_wal_index backend/salaries.db-shm backend/salaries.db-wal && \
-		cp backend/salaries_dev_data.db backend/salaries.db && \
+		pkill -f "salaries.db" 2>/dev/null || true && \
+		rm -f backend/salaries.db* backend/salaries_dev_data.db-* && \
+		sqlite3 backend/salaries_dev_data.db "PRAGMA wal_checkpoint(FULL);" && \
+		sqlite3 backend/salaries_dev_data.db ".backup 'backend/salaries.db'" && \
 		echo "Database replaced successfully."; \
 	else \
-		echo "Error: salaries_dev_data.db not found in backend/"; \
+		echo "Error: salaries_dev_data.db not found in backend/" && \
 		exit 1; \
 	fi
 

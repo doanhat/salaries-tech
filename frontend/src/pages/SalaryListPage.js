@@ -102,7 +102,7 @@ const translations = {
       job_title: "Poste",
       gross_salary: "Salaire Brut",
       net_salary: "Salaire Net",
-      variables: "Primes",
+      bonus: "Variables",
       level: "Niveau",
       work_type: "Type de contrat",
       experience_years_company: "Exp Entreprise",
@@ -142,8 +142,8 @@ const translations = {
       net_salary_max: "Salaire Net Max",
       gross_salary_min: "Salaire Brut Min",
       gross_salary_max: "Salaire Brut Max",
-      variables_min: "Primes Min",
-      variables_max: "Primes Max",
+      bonus_min: "Variables Min",
+      bonus_max: "Variables Max",
       experience_years_company_min: "Exp Entreprise Min",
       experience_years_company_max: "Exp Entreprise Max",
       total_experience_years_min: "Exp Totale Min",
@@ -182,7 +182,7 @@ const translations = {
       job_title: "Job Title",
       gross_salary: "Gross Salary",
       net_salary: "Net Salary",
-      variables: "Variables",
+      bonus: "Bonus",
       level: "Level",
       work_type: "Work Type",
       experience_years_company: "Company Exp",
@@ -222,8 +222,8 @@ const translations = {
       net_salary_max: "Net Salary Max",
       gross_salary_min: "Gross Salary Min",
       gross_salary_max: "Gross Salary Max",
-      variables_min: "Variables Min",
-      variables_max: "Variables Max",
+      bonus_min: "Bonus Min",
+      bonus_max: "Bonus Max",
       experience_years_company_min: "Company Exp Min",
       experience_years_company_max: "Company Exp Max",
       total_experience_years_min: "Total Exp Min",
@@ -275,8 +275,8 @@ const SalaryListPage = () => {
     net_salary_max: "",
     gross_salary_min: "",
     gross_salary_max: "",
-    variables_min: "",
-    variables_max: "",
+    bonus_min: "",
+    bonus_max: "",
     experience_years_company_min: "",
     experience_years_company_max: "",
     total_experience_years_min: "",
@@ -616,8 +616,8 @@ const SalaryListPage = () => {
       net_salary_max: "",
       gross_salary_min: "",
       gross_salary_max: "",
-      variables_min: "",
-      variables_max: "",
+      bonus_min: "",
+      bonus_max: "",
       experience_years_company_min: "",
       experience_years_company_max: "",
       total_experience_years_min: "",
@@ -714,9 +714,7 @@ const SalaryListPage = () => {
         <TableCell>
           {salary.net_salary !== null ? salary.net_salary : "N/A"}
         </TableCell>
-        <TableCell>
-          {salary.variables !== null ? salary.variables : "N/A"}
-        </TableCell>
+        <TableCell>{salary.bonus !== null ? salary.bonus : "N/A"}</TableCell>
         <TableCell>{capitalizeWords(salary.level) || "N/A"}</TableCell>
         <TableCell>{capitalizeWords(salary.work_type) || "N/A"}</TableCell>
         <TableCell>
@@ -1061,21 +1059,21 @@ const SalaryListPage = () => {
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.variables_min}
-                  name="variables_min"
+                  placeholder={t.filters.bonus_min}
+                  name="bonus_min"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.variables_min}
-                  value={pendingFilters.variables_min}
+                  title={t.filters.bonus_min}
+                  value={pendingFilters.bonus_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.variables_max}
-                  name="variables_max"
+                  placeholder={t.filters.bonus_max}
+                  name="bonus_max"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.variables_max}
-                  value={pendingFilters.variables_max}
+                  title={t.filters.bonus_max}
+                  value={pendingFilters.bonus_max}
                 />
               </Col>
               <Col md={4}>
@@ -1202,7 +1200,7 @@ const SalaryListPage = () => {
                 label={t.table.gross_salary}
               />
               <SortableHeader column="net_salary" label={t.table.net_salary} />
-              <SortableHeader column="variables" label={t.table.variables} />
+              <SortableHeader column="bonus" label={t.table.bonus} />
               <th>{t.table.level}</th>
               <th>{t.table.work_type}</th>
               <SortableHeader
@@ -1290,10 +1288,8 @@ const SalaryListPage = () => {
                   : "N/A"}
               </p>
               <p>
-                <strong>{t.table.variables}:</strong>{" "}
-                {selectedSalary.variables !== null
-                  ? selectedSalary.variables
-                  : "N/A"}
+                <strong>{t.table.bonus}:</strong>{" "}
+                {selectedSalary.bonus !== null ? selectedSalary.bonus : "N/A"}
               </p>
               <p>
                 <strong>{t.table.gender}:</strong>{" "}

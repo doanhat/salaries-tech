@@ -49,7 +49,7 @@ def test_salary_model():
         location="Test City",
         gross_salary=100000,
         net_salary=75000,
-        variables=10000,
+        bonus=10000,
         gender="Male",
         experience_years_company=2,
         total_experience_years=5,
@@ -65,7 +65,7 @@ def test_salary_model():
     assert salary.location == "Test City"
     assert salary.gross_salary == 100000
     assert salary.net_salary == 75000
-    assert salary.variables == 10000
+    assert salary.bonus == 10000
     assert salary.gender == "Male"
     assert salary.experience_years_company == 2
     assert salary.total_experience_years == 5

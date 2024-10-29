@@ -309,9 +309,9 @@ async def get_salaries(
                 func.coalesce(SalaryDB.net_salary, 0) <= net_salary_max
             )
         if variables_min is not None:
-            query = query.filter(func.coalesce(SalaryDB.variables, 0) >= variables_min)
+            query = query.filter(func.coalesce(SalaryDB.bonus, 0) >= variables_min)
         if variables_max is not None:
-            query = query.filter(func.coalesce(SalaryDB.variables, 0) <= variables_max)
+            query = query.filter(func.coalesce(SalaryDB.bonus, 0) <= variables_max)
         if technical_stacks:
             tech_stacks_list = [
                 stack.strip().lower() for stack in technical_stacks.split(",")

@@ -22,7 +22,7 @@ const initialFormData = {
   location: null,
   net_salary: null,
   gross_salary: null,
-  variables: null,
+  bonus: null,
   gender: null,
   experience_years_company: null,
   total_experience_years: null,
@@ -42,7 +42,7 @@ const translations = {
     location: "Localisation",
     net_salary: "Salaire Net",
     gross_salary: "Salaire Brut",
-    variables: "Primes",
+    bonus: "Primes",
     gender: "Genre",
     gender_value: {
       male: "Homme",
@@ -77,7 +77,7 @@ const translations = {
     location: "Location",
     net_salary: "Net Salary",
     gross_salary: "Gross Salary",
-    variables: "Variables",
+    bonus: "Bonus",
     gender: "Gender",
     gender_value: {
       male: "Male",
@@ -438,11 +438,11 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
             </Col>
             <Col md={4}>
               <Form.Group className="mb-3">
-                <Form.Label>{t.variables}</Form.Label>
+                <Form.Label>{t.bonus}</Form.Label>
                 <Form.Control
                   type="number"
-                  name="variables"
-                  value={formData.variables}
+                  name="bonus"
+                  value={formData.bonus}
                   onChange={handleInputChange}
                 />
               </Form.Group>
