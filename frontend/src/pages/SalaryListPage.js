@@ -687,9 +687,26 @@ const SalaryListPage = () => {
         <StickyCell left="0">{salary.company?.name || "N/A"}</StickyCell>
         <TableCell>{capitalizeWords(salary.location) || "N/A"}</TableCell>
         <TableCell>
-          {salary.jobs?.length > 0
-            ? capitalizeWords(salary.jobs[0].title)
-            : "N/A"}
+          {salary.jobs?.length > 0 ? (
+            <OverlayTrigger
+              placement="right"
+              overlay={
+                <Tooltip id={`tooltip-job-title-${salary.id}`}>
+                  {salary.jobs
+                    .map((job) => capitalizeWords(job.title))
+                    .join(", ")}
+                </Tooltip>
+              }
+            >
+              <span>
+                {salary.jobs
+                  .map((job) => capitalizeWords(job.title))
+                  .join(", ")}
+              </span>
+            </OverlayTrigger>
+          ) : (
+            "N/A"
+          )}
         </TableCell>
         <TableCell>
           {salary.gross_salary !== null ? salary.gross_salary : "N/A"}
