@@ -205,8 +205,8 @@ async def get_salaries(
     max_added_date: Optional[str] = None,
     net_salary_min: Optional[float] = None,
     net_salary_max: Optional[float] = None,
-    variables_min: Optional[float] = None,
-    variables_max: Optional[float] = None,
+    bonus_min: Optional[float] = None,
+    bonus_max: Optional[float] = None,
     technical_stacks: Optional[str] = Query(
         None, description="Comma-separated list of technical stacks"
     ),
@@ -308,10 +308,10 @@ async def get_salaries(
             query = query.filter(
                 func.coalesce(SalaryDB.net_salary, 0) <= net_salary_max
             )
-        if variables_min is not None:
-            query = query.filter(func.coalesce(SalaryDB.bonus, 0) >= variables_min)
-        if variables_max is not None:
-            query = query.filter(func.coalesce(SalaryDB.bonus, 0) <= variables_max)
+        if bonus_min is not None:
+            query = query.filter(func.coalesce(SalaryDB.bonus, 0) >= bonus_min)
+        if bonus_max is not None:
+            query = query.filter(func.coalesce(SalaryDB.bonus, 0) <= bonus_max)
         if technical_stacks:
             tech_stacks_list = [
                 stack.strip().lower() for stack in technical_stacks.split(",")
