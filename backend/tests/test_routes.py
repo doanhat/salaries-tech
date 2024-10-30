@@ -2,6 +2,7 @@ import json
 import random
 import uuid
 from unittest.mock import MagicMock, patch
+from urllib.parse import urlencode
 
 from fastapi.testclient import TestClient
 
@@ -41,20 +42,17 @@ def test_create_salary(client: TestClient, monkeypatch):
         "jobs": [{"title": "Software Engineer"}],
         "bonus": 5000,
         "total_experience_years": 2,
-        "company": {"name": "Tech Corp", "type": "startup", "tags": [{"name": "tech"}]},
+        "company": {
+            "name": "Tech Corp",
+            "type": CompanyType.STARTUP.value,
+            "tags": [{"name": "tech"}],
+        },
         "leave_days": 20,
         "experience_years_company": 1,
     }
 
-    # Convert the salary data to a JSON string
-    salary_json = json.dumps(salary_data)
-
-    # Prepare the form data
-    form_data = {
-        "salary": salary_json,
-        "captcha_token": "test_token",
-        "user_agent": "test_user_agent",
-    }
+    # Prepare query parameters
+    query_params = {"captcha_token": "test_token", "user_agent": "test_user_agent"}
 
     # Mock the Google Cloud client
     mock_client = MagicMock()
@@ -74,13 +72,15 @@ def test_create_salary(client: TestClient, monkeypatch):
     ):
         # Make the request
         response = client.post(
-            "/salaries/",
-            data=form_data,
+            f"/salaries/?{urlencode(query_params)}",  # Add query parameters to URL
+            json=salary_data,  # Send salary data directly in body
+            headers={"Content-Type": "application/json"},
         )
 
     # Print response content for debugging
     print(f"Response status code: {response.status_code}")
     print(f"Response content: {response.content}")
+    print(f"response: {response.json()}")
 
     # Assert that the response is successful
     assert response.status_code == 200
