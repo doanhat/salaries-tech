@@ -92,54 +92,53 @@ export const addSalary = async (salaryData, captchaToken, userAgent) => {
   try {
     // Format the data
     const formattedData = {
-      ...salaryData,
+      gender: salaryData.gender,
+      level: salaryData.level,
+      gross_salary: parseFloat(salaryData.gross_salary),
+      work_type: salaryData.work_type,
       net_salary: salaryData.net_salary
         ? parseFloat(salaryData.net_salary)
         : null,
-      gross_salary: parseFloat(salaryData.gross_salary),
+      technical_stacks: salaryData.technical_stacks.map((stack) => ({
+        name: stack,
+      })),
+      added_date:
+        salaryData.added_date || new Date().toISOString().split("T")[0],
+      location: salaryData.location,
+      jobs: salaryData.job_titles.map((title) => ({ title })),
       bonus: salaryData.bonus ? parseFloat(salaryData.bonus) : null,
-      experience_years_company: salaryData.experience_years_company
-        ? parseInt(salaryData.experience_years_company)
-        : null,
       total_experience_years: salaryData.total_experience_years
         ? parseInt(salaryData.total_experience_years)
         : null,
-      level: salaryData.level || null,
-      work_type: salaryData.work_type || null,
+      company: salaryData.company_name
+        ? {
+            name: salaryData.company_name,
+            type: salaryData.company_type,
+            tags: salaryData.company_tags.map((tag) => ({ name: tag })),
+          }
+        : null,
       leave_days: salaryData.leave_days
         ? parseInt(salaryData.leave_days)
         : null,
-      technical_stacks: salaryData.technical_stacks
-        ? salaryData.technical_stacks.map((stack) => ({ name: stack }))
-        : [],
-      jobs: salaryData.job_titles
-        ? salaryData.job_titles.map((title) => ({ title }))
-        : [],
-      company: {
-        name: salaryData.company_name,
-        type: salaryData.company_type,
-        tags: salaryData.company_tags
-          ? salaryData.company_tags.map((tag) => ({ name: tag }))
-          : [],
-      },
+      experience_years_company: salaryData.experience_years_company
+        ? parseInt(salaryData.experience_years_company)
+        : null,
     };
 
-    // Remove any fields with null values
-    Object.keys(formattedData).forEach(
-      (key) => formattedData[key] === null && delete formattedData[key],
-    );
+    // Add query parameters for captcha and user agent
+    const queryParams = new URLSearchParams({
+      captcha_token: captchaToken,
+      user_agent: userAgent,
+    });
 
-    const formData = new FormData();
-    formData.append("salary", JSON.stringify(formattedData));
-    formData.append("captcha_token", captchaToken);
-    formData.append("user_agent", userAgent);
-
-    console.log("Data being sent to backend:", formattedData);
-    const response = await fetch(`${API_BASE_URL}/salaries/`, {
+    const response = await fetch(`${API_BASE_URL}/salaries/?${queryParams}`, {
       method: "POST",
-      body: formData,
+      headers: {
+        ...(await getHeaders()),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formattedData),
       credentials: "include",
-      headers: await getHeaders(),
     });
 
     if (!response.ok) {

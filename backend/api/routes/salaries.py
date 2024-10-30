@@ -1,9 +1,8 @@
-import json
 import os
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from pydantic import ValidationError
 from sqlalchemy import asc, delete, desc, func
 from sqlalchemy.orm import Session
@@ -32,9 +31,9 @@ router = APIRouter(prefix="/salaries", tags=["salaries"])
 @router.post("/", response_model=Salary)
 async def create_salary(
     request: Request,
-    salary: str = Form(...),
-    captcha_token: str = Form(...),
-    user_agent: str = Form(...),
+    captcha_token: str = Query(...),
+    user_agent: str = Query(...),
+    salary: Salary = Body(...),
     db: Session = Depends(get_db_session),
 ) -> Salary:
     try:
@@ -56,12 +55,7 @@ async def create_salary(
         if assessment.risk_analysis.score < 0.5:  # Adjust this threshold as needed
             raise HTTPException(status_code=400, detail="reCAPTCHA verification failed")
 
-        salary_data = json.loads(salary)
-        salary_model = Salary.model_validate(salary_data)
-
-        salary_dict = salary_model.model_dump(
-            exclude={"company", "jobs", "technical_stacks"}
-        )
+        salary_dict = salary.model_dump(exclude={"company", "jobs", "technical_stacks"})
 
         if "added_date" not in salary_dict or not salary_dict["added_date"]:
             salary_dict["added_date"] = datetime.now().date()
@@ -72,24 +66,22 @@ async def create_salary(
                 salary_dict[field] = salary_dict[field].lower()
 
         db_salary = SalaryDB(**salary_dict)
-        db.add(db_salary)  # Add the salary to the session immediately
+        db.add(db_salary)
 
         # Handle company
-        if salary_model.company and salary_model.company.name:
+        if salary.company and salary.company.name:
             db_company = (
                 db.query(CompanyDB)
-                .filter(
-                    func.lower(CompanyDB.name) == func.lower(salary_model.company.name)
-                )
+                .filter(func.lower(CompanyDB.name) == func.lower(salary.company.name))
                 .first()
             )
             if not db_company:
                 db_company = CompanyDB(
-                    name=salary_model.company.name, type=salary_model.company.type
+                    name=salary.company.name, type=salary.company.type
                 )
                 # Handle company tags
-                if salary_model.company.tags:
-                    for tag in salary_model.company.tags:
+                if salary.company.tags:
+                    for tag in salary.company.tags:
                         db_tag = (
                             db.query(TagDB)
                             .filter(func.lower(TagDB.name) == tag.name.lower())
@@ -103,8 +95,8 @@ async def create_salary(
             db_salary.company = db_company
 
         # Handle jobs
-        if salary_model.jobs:
-            for job in salary_model.jobs:
+        if salary.jobs:
+            for job in salary.jobs:
                 db_job = (
                     db.query(JobDB)
                     .filter(func.lower(JobDB.title) == job.title.lower())
@@ -116,8 +108,8 @@ async def create_salary(
                 db_salary.jobs.append(db_job)
 
         # Handle technical stacks
-        if salary_model.technical_stacks:
-            for stack in salary_model.technical_stacks:
+        if salary.technical_stacks:
+            for stack in salary.technical_stacks:
                 db_stack = (
                     db.query(TechnicalStackDB)
                     .filter(func.lower(TechnicalStackDB.name) == stack.name.lower())
