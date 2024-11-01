@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from jose import jwt
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Email, Mail
+from sendgrid.helpers.mail import Email, Header, Mail
 
 from ..config.env import (
     ALLOWED_ORIGINS,
@@ -79,10 +79,10 @@ async def send_verification_email(
             """,
         )
 
-        # Add custom headers for better deliverability
-        message.add_header(
-            {"X-Priority": "1", "X-MSMail-Priority": "High", "Importance": "High"}
-        )
+        # Add custom headers correctly
+        message.header = Header(key="X-Priority", value="1")
+        message.header = Header(key="X-MSMail-Priority", value="High")
+        message.header = Header(key="Importance", value="High")
 
         # Send email
         sg = SendGridAPIClient(SENDGRID_API_KEY)
