@@ -187,7 +187,7 @@ const translations = {
       loading: "Chargement des données...",
       add_salary_success: "Salaire ajouté avec succès !",
       add_salary_success_email:
-        "Salaire ajouté avec succès ! Veuillez vérifier votre email pour la vérification.",
+        "Salaire ajouté avec succès ! Veuillez vérifier votre email pour la vérification. Il peut prendre quelques heures pour arriver. (J'utilise un plan gratuit donc ça peut être lent :( )",
     },
     email_body: {
       subject: "Vérifier votre soumission de salaire",
@@ -289,7 +289,7 @@ const translations = {
       loading: "Loading data...",
       add_salary_success: "Salary added successfully!",
       add_salary_success_email:
-        "Salary added successfully! Please check your email for verification.",
+        "Salary added successfully! Please check your email for verification. It can take a few hours to arrive. (I'm using a free plan so it might be slow :( )",
     },
     email_body: {
       subject: "Verify your salary submission",

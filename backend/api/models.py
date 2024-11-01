@@ -190,11 +190,17 @@ class Salary(BaseModel):
         if v is None:
             return v
         common_domains = [
+            "gmail.com",
             "yahoo.com",
             "hotmail.com",
             "outlook.com",
             "aol.com",
-            "bing.com",
+            "protonmail.com",
+            "icloud.com",
+            "mail.com",
+            "live.com",
+            "me.com",
+            "msn.com",
         ]
         try:
             domain = v.split("@")[1].lower()

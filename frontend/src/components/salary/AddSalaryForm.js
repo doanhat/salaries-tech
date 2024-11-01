@@ -14,6 +14,20 @@ import {
 import { capitalizeWords } from "../../utils/stringUtils";
 import { useLanguage } from "../../contexts/LanguageContext";
 
+const COMMON_EMAIL_DOMAINS = [
+  "gmail.com",
+  "yahoo.com",
+  "hotmail.com",
+  "outlook.com",
+  "aol.com",
+  "protonmail.com",
+  "icloud.com",
+  "mail.com",
+  "live.com",
+  "me.com",
+  "msn.com",
+];
+
 const initialFormData = {
   company_name: null,
   company_type: null,
@@ -78,6 +92,10 @@ const translations = {
       verify_button_text: "Vérifier mon email",
       expiration_text: "Ce lien de vérification expirera dans 7 jours.",
     },
+    errors: {
+      professional_email:
+        "Veuillez utiliser un email professionnel. Les emails personnels ne sont pas acceptés.",
+    },
   },
   en: {
     title: "Add Salary",
@@ -123,6 +141,10 @@ const translations = {
         "Thank you for submitting your salary information. Please verify your email address by clicking the button below:",
       verify_button_text: "Verify my email",
       expiration_text: "This verification link will expire in 7 days.",
+    },
+    errors: {
+      professional_email:
+        "Please use a work email. Personal email domains are not accepted.",
     },
   },
 };
@@ -254,7 +276,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
       formData.professional_email &&
       !validateEmail(formData.professional_email)
     )
-      newErrors.professional_email = "Please use a professional email";
+      newErrors.professional_email = t.errors.professional_email;
     if (
       Object.keys(newErrors).length > 0 ||
       Object.values(errors).some((error) => error !== null)
@@ -286,15 +308,8 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
 
   const validateEmail = (email) => {
     if (!email) return true; // Optional field
-    const commonDomains = [
-      "yahoo.com",
-      "hotmail.com",
-      "outlook.com",
-      "aol.com",
-      "protonmail.com",
-    ];
     const domain = email.split("@")[1]?.toLowerCase();
-    return !commonDomains.includes(domain);
+    return domain && !COMMON_EMAIL_DOMAINS.includes(domain);
   };
 
   return (
