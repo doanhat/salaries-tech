@@ -150,7 +150,7 @@ def test_create_salary(
 
     # Mock the necessary functions
     monkeypatch.setattr(
-        "backend.api.services.auth.create_assessment",
+        "backend.api.tools.gcp.recaptcha.create_assessment",
         mock_create_assessment,
     )
 

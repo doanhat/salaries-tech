@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, func
@@ -48,10 +48,10 @@ async def create_company(
         )
 
 
-@router.get("/", response_model=Dict[str, Union[List[Company], int]])
+@router.get("/", response_model=Dict[str, List[Company] | int])
 async def get_companies(
     db: Session = Depends(get_db_session), limit: int = 50, skip: int = 0
-) -> Dict[str, Union[List[Company], int]]:
+) -> Dict[str, List[Company] | int]:
     results = db.query(CompanyDB).offset(skip).limit(limit).all()
     total = db.query(CompanyDB).count()
     companies = []

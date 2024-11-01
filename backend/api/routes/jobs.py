@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
@@ -19,10 +19,10 @@ async def create_job(job: Job, db: Session = Depends(get_db_session)) -> Job:
     return Job(**{j.name: getattr(db_job, j.name) for j in db_job.__table__.columns})
 
 
-@router.get("/", response_model=Dict[str, Union[List[Job], int]])
+@router.get("/", response_model=Dict[str, List[Job] | int])
 async def get_jobs(
     db: Session = Depends(get_db_session),
-) -> Dict[str, Union[List[Job], int]]:
+) -> Dict[str, List[Job] | int]:
     jobs = db.query(JobDB).all()
     return {
         "results": [
