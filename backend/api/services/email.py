@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from jose import jwt
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from sendgrid.helpers.mail import Email, Mail
 
 from ..config.env import (
     ALLOWED_ORIGINS,
@@ -51,9 +51,14 @@ async def send_verification_email(
 
         verification_url = f"{ALLOWED_ORIGINS[0]}/salaries/verify-email?token={token}"
 
-        # Create email message
+        # Create email message with explicit From name and email
+        from_email = Email(
+            email=SENDGRID_FROM_EMAIL,
+            name="Salaries Tech",
+        )
+
         message = Mail(
-            from_email=SENDGRID_FROM_EMAIL,
+            from_email=from_email,
             to_emails=email,
             subject=subject,
             html_content=f"""
@@ -72,6 +77,11 @@ async def send_verification_email(
                     <p style="font-size: 14px; color: #666;">{expiration_text}</p>
                 </div>
             """,
+        )
+
+        # Add custom headers for better deliverability
+        message.add_header(
+            {"X-Priority": "1", "X-MSMail-Priority": "High", "Importance": "High"}
         )
 
         # Send email
