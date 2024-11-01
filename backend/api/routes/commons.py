@@ -14,7 +14,7 @@ from ..models import (
     TechnicalStackDB,
     WorkType,
 )
-from ..tools import capitalize_words
+from ..tools.text import capitalize_words
 
 router = APIRouter(tags=["commons"])
 

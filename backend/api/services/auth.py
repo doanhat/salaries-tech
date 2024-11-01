@@ -4,7 +4,7 @@ import google.cloud.recaptchaenterprise_v1 as recaptcha_v1
 from fastapi import HTTPException, Request
 
 from ..config.env import API_KEY_SECRET_NAME, ENV, PROJECT_ID
-from ..config.secrets import get_secret
+from ..tools.gcp.secrets import get_secret
 
 
 def create_assessment(
