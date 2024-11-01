@@ -5,6 +5,7 @@ import pytest
 from backend.api.models import (
     Company,
     CompanyType,
+    Gender,
     Job,
     Level,
     Salary,
@@ -50,7 +51,7 @@ def test_salary_model():
         gross_salary=100000,
         net_salary=75000,
         bonus=10000,
-        gender="Male",
+        gender=Gender.MALE,
         experience_years_company=2,
         total_experience_years=5,
         level=Level.MID,
@@ -66,7 +67,7 @@ def test_salary_model():
     assert salary.gross_salary == 100000
     assert salary.net_salary == 75000
     assert salary.bonus == 10000
-    assert salary.gender == "Male"
+    assert salary.gender == Gender.MALE
     assert salary.experience_years_company == 2
     assert salary.total_experience_years == 5
     assert salary.level == Level.MID
@@ -92,3 +93,9 @@ def test_salary_levels(level):
 def test_salary_work_types(work_type):
     salary = Salary(location="Test City", gross_salary=100000, work_type=work_type)
     assert salary.work_type == work_type
+
+
+@pytest.mark.parametrize("gender", list(Gender))
+def test_salary_genders(gender):
+    salary = Salary(location="Test City", gross_salary=100000, gender=gender)
+    assert salary.gender == gender

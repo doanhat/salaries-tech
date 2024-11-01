@@ -30,6 +30,7 @@ const initialFormData = {
   work_type: null,
   leave_days: null,
   technical_stacks: [],
+  professional_email: null,
 };
 
 const translations = {
@@ -67,6 +68,16 @@ const translations = {
       location: "Sélectionner ou taper pour ajouter une localisation",
       technical_stacks: "Sélectionner ou taper pour ajouter un stack technique",
     },
+    professional_email: "Email Professionnel",
+    professional_email_help:
+      "Veuillez entrer un email professionnel si vous souhaitez que votre salaire soit vérifié",
+    email_body: {
+      subject: "Vérifier votre soumission de salaire",
+      greeting_text:
+        "Merci pour votre soumission de salaire. Veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous:",
+      verify_button_text: "Vérifier mon email",
+      expiration_text: "Ce lien de vérification expirera dans 7 jours.",
+    },
   },
   en: {
     title: "Add Salary",
@@ -102,6 +113,16 @@ const translations = {
       job_title_selected: "Job titles selected",
       location: "Select or type to add a location",
       technical_stacks: "Select or type to add a technical stack",
+    },
+    professional_email: "Professional Email",
+    professional_email_help:
+      "Please enter a professional email if you want your salary to be verified",
+    email_body: {
+      subject: "Verify your salary submission",
+      greeting_text:
+        "Thank you for submitting your salary information. Please verify your email address by clicking the button below:",
+      verify_button_text: "Verify my email",
+      expiration_text: "This verification link will expire in 7 days.",
     },
   },
 };
@@ -230,6 +251,11 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
     if (isNewCompany && !formData.company_type)
       newErrors.company_type = "Company type is required for new companies";
     if (
+      formData.professional_email &&
+      !validateEmail(formData.professional_email)
+    )
+      newErrors.professional_email = "Please use a professional email";
+    if (
       Object.keys(newErrors).length > 0 ||
       Object.values(errors).some((error) => error !== null)
     ) {
@@ -238,7 +264,12 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
     }
 
     try {
-      await onSalaryAdded(formData, captchaToken, navigator.userAgent);
+      await onSalaryAdded(
+        formData,
+        captchaToken,
+        navigator.userAgent,
+        t.email_body,
+      );
       setFormData(initialFormData);
       setCaptchaToken(null);
       handleClose();
@@ -252,6 +283,19 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
     label: preserveCase ? label : capitalizeWords(label),
     value: preserveCase ? label : label.toLowerCase(),
   });
+
+  const validateEmail = (email) => {
+    if (!email) return true; // Optional field
+    const commonDomains = [
+      "yahoo.com",
+      "hotmail.com",
+      "outlook.com",
+      "aol.com",
+      "protonmail.com",
+    ];
+    const domain = email.split("@")[1]?.toLowerCase();
+    return !commonDomains.includes(domain);
+  };
 
   return (
     <Modal show={show} onHide={handleClose} size="lg">
@@ -568,6 +612,24 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                     {errors.technical_stacks}
                   </Form.Text>
                 )}
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>{t.professional_email}</Form.Label>
+                <Form.Control
+                  type="email"
+                  name="professional_email"
+                  value={formData.professional_email || ""}
+                  onChange={handleInputChange}
+                  isInvalid={!!errors.professional_email}
+                />
+                <Form.Text className="text-muted">
+                  {t.professional_email_help}
+                </Form.Text>
+                <Form.Control.Feedback type="invalid">
+                  {errors.professional_email}
+                </Form.Control.Feedback>
               </Form.Group>
             </Col>
           </Row>

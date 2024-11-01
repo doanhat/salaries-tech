@@ -1,17 +1,13 @@
-import os
 from typing import Annotated
 
-from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import APIKeyHeader
 
-# Import routes explicitly
+from .config.env import ALLOWED_ORIGINS
 from .routes import commons, companies, jobs, root, salaries, technical_stacks
 from .services.auth import verify_api_key
-
-load_dotenv()
 
 # Define the API key header scheme for Swagger UI
 api_key_scheme = APIKeyHeader(name="X-API-Key", auto_error=True)
@@ -61,7 +57,7 @@ app.__setattr__("openapi", get_openapi_schema)
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(","),
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

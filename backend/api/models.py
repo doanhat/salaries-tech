@@ -2,7 +2,7 @@ from datetime import date
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import relationship
 
@@ -35,6 +35,18 @@ class WorkType(str, Enum):
     REMOTE = "remote"
     HYBRID = "hybrid"
     ONSITE = "onsite"
+
+
+class Gender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+
+
+class EmailVerificationStatus(str, Enum):
+    NO = "no"
+    PENDING = "pending"
+    VERIFIED = "verified"
 
 
 # Association table for many-to-many relationship between Salary and Technical Stack
@@ -117,6 +129,8 @@ class SalaryDB(Base):
         "TechnicalStackDB", secondary=salary_technical_stack, back_populates="salaries"
     )
     jobs = relationship("JobDB", secondary=salary_job, back_populates="salaries")
+    email_domain = Column(String, nullable=True)
+    verified = Column(String, default=EmailVerificationStatus.NO.value)
 
 
 # Pydantic model
@@ -158,7 +172,7 @@ class Salary(BaseModel):
     net_salary: Optional[float] = None
     gross_salary: float
     bonus: Optional[float] = None
-    gender: Optional[str] = None
+    gender: Optional[Gender] = None
     experience_years_company: Optional[int] = None
     total_experience_years: Optional[int] = None
     level: Optional[Level] = None
@@ -166,5 +180,35 @@ class Salary(BaseModel):
     added_date: Optional[date] = None
     leave_days: Optional[int] = None
     technical_stacks: Optional[List[TechnicalStack]] = []
+    professional_email: Optional[str] = None
+    verified: Optional[EmailVerificationStatus] = Field(
+        default=EmailVerificationStatus.NO
+    )
+
+    @field_validator("professional_email")
+    def validate_professional_email(cls, v):
+        if v is None:
+            return v
+        common_domains = [
+            "yahoo.com",
+            "hotmail.com",
+            "outlook.com",
+            "aol.com",
+            "bing.com",
+        ]
+        try:
+            domain = v.split("@")[1].lower()
+            if domain in common_domains:
+                raise ValueError("Please use a professional email address")
+        except IndexError:
+            raise ValueError("Invalid email format")
+        return v
 
     model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+
+
+class EmailBody(BaseModel):
+    subject: str
+    greeting_text: str
+    verify_button_text: str
+    expiration_text: str

@@ -13,6 +13,9 @@ LOCAL_SQLALCHEMY_DATABASE_URL := sqlite:///./salaries.db
 LOCAL_API_KEY := local-api-key
 FIREBASE_SITE_NAME := salaries-tech
 API_KEY_SECRET_NAME := salaries-api-key
+EMAIL_VERIFICATION_SECRET_NAME := salaries-email-verification
+LOCAL_SENDGRID_FROM_EMAIL := hello@salaries.tech
+LOCAL_SENDGRID_API_KEY := sg-api-key
 
 # Backend
 install-backend: .install-backend .cache ## Install project dependencies
@@ -105,6 +108,9 @@ set-local-env:
 		echo "SQLALCHEMY_DATABASE_URL=" >> backend/api/.env; \
 		echo "API_KEY_SECRET_NAME=" >> backend/api/.env; \
 		echo "ENV=dev" >> backend/api/.env; \
+		echo "EMAIL_VERIFICATION_SECRET_NAME=" >> backend/api/.env; \
+		echo "SENDGRID_API_KEY=" >> backend/api/.env; \
+		echo "SENDGRID_FROM_EMAIL=" >> backend/api/.env; \
 	fi
 	if [ ! -f frontend/.env ]; then \
 		echo "REACT_APP_API_BASE_URL=" > frontend/.env; \
@@ -118,6 +124,9 @@ set-local-env:
 		sed -i '' 's|^SQLALCHEMY_DATABASE_URL=.*|SQLALCHEMY_DATABASE_URL='"$(LOCAL_SQLALCHEMY_DATABASE_URL)"'|' backend/api/.env; \
 		sed -i '' 's|^ENV=.*|ENV=dev|' backend/api/.env; \
 		sed -i '' 's|^API_KEY_SECRET_NAME=.*|API_KEY_SECRET_NAME='"$(API_KEY_SECRET_NAME)"'|' backend/api/.env; \
+		sed -i '' 's|^EMAIL_VERIFICATION_SECRET_NAME=.*|EMAIL_VERIFICATION_SECRET_NAME='"$(EMAIL_VERIFICATION_SECRET_NAME)"'|' backend/api/.env; \
+		sed -i '' 's|^SENDGRID_API_KEY=.*|SENDGRID_API_KEY='"$(LOCAL_SENDGRID_API_KEY)"'|' backend/api/.env; \
+		sed -i '' 's|^SENDGRID_FROM_EMAIL=.*|SENDGRID_FROM_EMAIL='"$(LOCAL_SENDGRID_FROM_EMAIL)"'|' backend/api/.env; \
 	else \
 		sed -i 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$(LOCAL_FRONTEND_URL)"'|' backend/api/.env; \
 		sed -i 's|^PROJECT_ID=.*|PROJECT_ID='"$(PROJECT_ID)"'|' backend/api/.env; \
@@ -125,6 +134,9 @@ set-local-env:
 		sed -i 's|^SQLALCHEMY_DATABASE_URL=.*|SQLALCHEMY_DATABASE_URL='"$(LOCAL_SQLALCHEMY_DATABASE_URL)"'|' backend/api/.env; \
 		sed -i 's|^ENV=.*|ENV=dev|' backend/api/.env; \
 		sed -i 's|^API_KEY_SECRET_NAME=.*|API_KEY_SECRET_NAME='"$(API_KEY_SECRET_NAME)"'|' backend/api/.env; \
+		sed -i 's|^EMAIL_VERIFICATION_SECRET_NAME=.*|EMAIL_VERIFICATION_SECRET_NAME='"$(EMAIL_VERIFICATION_SECRET_NAME)"'|' backend/api/.env; \
+		sed -i 's|^SENDGRID_API_KEY=.*|SENDGRID_API_KEY='"$(LOCAL_SENDGRID_API_KEY)"'|' backend/api/.env; \
+		sed -i 's|^SENDGRID_FROM_EMAIL=.*|SENDGRID_FROM_EMAIL='"$(LOCAL_SENDGRID_FROM_EMAIL)"'|' backend/api/.env; \
 	fi
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
@@ -197,7 +209,10 @@ deploy-backend: build-and-push
 		--set-env-vars ALLOWED_ORIGINS=$(shell if [ -n "$(ALLOWED_ORIGINS)" ]; then echo "$(ALLOWED_ORIGINS)"; else awk -F "=" "/ALLOWED_ORIGINS/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
 		--set-env-vars SQLALCHEMY_DATABASE_URL=$(shell if [ -n "$(SQLALCHEMY_DATABASE_URL)" ]; then echo "$(SQLALCHEMY_DATABASE_URL)"; else awk -F "=" "/SQLALCHEMY_DATABASE_URL/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
 		--set-env-vars ENV=$(ENV) \
-		--set-env-vars API_KEY_SECRET_NAME=$(API_KEY_SECRET_NAME)
+		--set-env-vars API_KEY_SECRET_NAME=$(API_KEY_SECRET_NAME) \
+		--set-env-vars EMAIL_VERIFICATION_SECRET_NAME=$(EMAIL_VERIFICATION_SECRET_NAME) \
+		--set-env-vars SENDGRID_API_KEY=$(SENDGRID_API_KEY) \
+		--set-env-vars SENDGRID_FROM_EMAIL=$(SENDGRID_FROM_EMAIL)
 
 
 set-frontend-env:
@@ -233,21 +248,24 @@ deploy-frontend:
 	firebase target:apply hosting $$SITE_NAME $$SITE_NAME && \
 	firebase deploy --only hosting:$$SITE_NAME
 
-.PHONY: create-api-key
-create-api-key:
+.PHONY: create-secret
+create-secret:
+	@if [ -z "$(SECRET_NAME)" ]; then \
+		SECRET_NAME=$(API_KEY_SECRET_NAME); \
+	fi
 	@echo "Creating/updating API key secret..."
 	@API_KEY=$$(openssl rand -base64 32 | tr -d '\n' | tr -d "'" | tr -d " ") && \
-	if gcloud secrets describe $(API_KEY_SECRET_NAME) >/dev/null 2>&1; then \
-		printf "%s" "$$API_KEY" | gcloud secrets versions add $(API_KEY_SECRET_NAME) --data-file=-; \
+	if gcloud secrets describe $(SECRET_NAME) >/dev/null 2>&1; then \
+		printf "%s" "$$API_KEY" | gcloud secrets versions add $(SECRET_NAME) --data-file=-; \
 		echo "Updated existing API key secret with new version"; \
 	else \
-		printf "%s" "$$API_KEY" | gcloud secrets create $(API_KEY_SECRET_NAME) \
+		printf "%s" "$$API_KEY" | gcloud secrets create $(SECRET_NAME) \
 			--data-file=- \
 			--replication-policy="automatic"; \
 		echo "Created new API key secret"; \
 	fi
 
-.PHONY: get-api-key
-get-api-key:
-	@gcloud secrets versions access latest --secret=$(API_KEY_SECRET_NAME)
+.PHONY: get-secret
+get-secret:
+	@gcloud secrets versions access latest --secret=$(SECRET_NAME)
 

@@ -24,6 +24,8 @@ tenacity = "^9.0.0"
 google-cloud-recaptcha-enterprise = "^1.22.1"
 firebase-admin = "^6.5.0"
 google-cloud-secret-manager = "^2.21.0"
+sendgrid = "^6.11.0"
+python-jose = {version = "^3.3.0", extras = ["cryptography"]}
 
 
 [tool.poetry.group.dev.dependencies]
@@ -42,6 +44,7 @@ pytest-tornasync = "^0.6.0.post2"
 pytest-trio = "^0.8.0"
 pytest-twisted = "^1.14.3"
 twisted = "^24.7.0"
+pytest-dotenv = "^0.5.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -53,4 +56,8 @@ lint.ignore = ["E741"]
 [tool.pytest.ini_options]
 pythonpath = [
   "."
+]
+env_override_existing_values = 1
+env_files = [
+    "backend/tests/.env.test",
 ]

@@ -122,6 +122,12 @@ const translations = {
         name: "Actions",
         title: "Détails",
       },
+      verified: "Vérifié",
+      verification_value: {
+        no: "Non vérifié",
+        pending: "En attente",
+        verified: "Vérifié",
+      },
     },
     filters: {
       title: "Filtres",
@@ -153,6 +159,12 @@ const translations = {
       added_date_min: "Date d'ajout Min",
       added_date_max: "Date d'ajout Max",
       technical_stacks: "Stacks techniques",
+      verifications: "Vérifications",
+      verification_value: {
+        no: "Non vérifié",
+        pending: "En attente",
+        verified: "Vérifié",
+      },
     },
     buttons: {
       add_salary: "Ajouter un salaire",
@@ -173,6 +185,16 @@ const translations = {
     info: {
       no_filters_applied: "Aucun filtre appliqué.",
       loading: "Chargement des données...",
+      add_salary_success: "Salaire ajouté avec succès !",
+      add_salary_success_email:
+        "Salaire ajouté avec succès ! Veuillez vérifier votre email pour la vérification.",
+    },
+    email_body: {
+      subject: "Vérifier votre soumission de salaire",
+      greeting_text:
+        "Merci pour votre soumission de salaire. Veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous:",
+      verify_button_text: "Vérifier mon email",
+      expiration_text: "Ce lien de vérification expirera dans 7 jours.",
     },
   },
   en: {
@@ -201,6 +223,12 @@ const translations = {
       actions: {
         name: "Actions",
         title: "Details",
+      },
+      verified: "Verified",
+      verification_value: {
+        no: "Not Verified",
+        pending: "Pending",
+        verified: "Verified",
       },
     },
     filters: {
@@ -233,6 +261,12 @@ const translations = {
       added_date_min: "Added Date Min",
       added_date_max: "Added Date Max",
       technical_stacks: "Technical Stacks",
+      verifications: "Verifications",
+      verification_value: {
+        no: "Not Verified",
+        pending: "Pending",
+        verified: "Verified",
+      },
     },
     buttons: {
       add_salary: "Add a Salary",
@@ -253,6 +287,16 @@ const translations = {
     info: {
       no_filters_applied: "No filters applied.",
       loading: "Loading data...",
+      add_salary_success: "Salary added successfully!",
+      add_salary_success_email:
+        "Salary added successfully! Please check your email for verification.",
+    },
+    email_body: {
+      subject: "Verify your salary submission",
+      greeting_text:
+        "Thank you for submitting your salary information. Please verify your email address by clicking the button below:",
+      verify_button_text: "Verify my email",
+      expiration_text: "This verification link will expire in 7 days.",
     },
   },
 };
@@ -433,19 +477,37 @@ const SalaryListPage = () => {
 
   const handleSalaryAdded = async (newSalary, captchaToken) => {
     try {
-      const response = await addSalary(newSalary, captchaToken);
+      const userAgent = navigator.userAgent;
+      const emailBody = {
+        subject: t.email_body.subject,
+        greeting_text: t.email_body.greeting_text,
+        verify_button_text: t.email_body.verify_button_text,
+        expiration_text: t.email_body.expiration_text,
+      };
+      const response = await addSalary(
+        newSalary,
+        captchaToken,
+        userAgent,
+        emailBody,
+      );
       console.log("Salary added successfully:", response);
-      setSuccessMessage("Salary added successfully!");
+      setSuccessMessage(
+        newSalary.professional_email
+          ? t.info.add_salary_success_email
+          : t.info.add_salary_success,
+      );
       setShowAddSalaryModal(false);
       fetchSalaries(); // Refresh the salary list
     } catch (error) {
       console.error("Error adding salary:", error);
-      let errorMessage = "Failed to add salary. Please try again.";
+      let errorMessage = t.errors.add;
       if (error.message) {
         try {
           const parsedError = JSON.parse(error.message);
           if (parsedError.detail && Array.isArray(parsedError.detail)) {
             errorMessage = parsedError.detail.map((err) => err.msg).join(", ");
+          } else if (parsedError.detail) {
+            errorMessage = parsedError.detail;
           }
         } catch (e) {
           errorMessage = error.message;
@@ -781,6 +843,23 @@ const SalaryListPage = () => {
         <TableCell>
           {salary.leave_days !== null ? salary.leave_days : "N/A"}
         </TableCell>
+        <td>
+          {salary.verified === "no" && (
+            <span className="text-muted">{t.table.verification_value.no}</span>
+          )}
+          {salary.verified === "pending" && (
+            <span className="text-warning">
+              <i className="bi bi-clock"></i>{" "}
+              {t.table.verification_value.pending}
+            </span>
+          )}
+          {salary.verified === "verified" && (
+            <span className="text-success">
+              <i className="bi bi-check-circle"></i>{" "}
+              {t.table.verification_value.verified}
+            </span>
+          )}
+        </td>
         <StickyCell right="0">
           <Button
             variant="info"
@@ -1152,6 +1231,26 @@ const SalaryListPage = () => {
                   title={t.filters.added_date_max}
                 />
               </Col>
+              <Col md={4}>
+                <SelectWithTooltip
+                  options={[
+                    { value: "no", label: t.filters.verification_value.no },
+                    {
+                      value: "pending",
+                      label: t.filters.verification_value.pending,
+                    },
+                    {
+                      value: "verified",
+                      label: t.filters.verification_value.verified,
+                    },
+                  ]}
+                  onChange={handleMultiSelectChange}
+                  placeholder={t.filters.verifications}
+                  title={t.filters.verifications}
+                  value={pendingFilters.verifications || []}
+                  name="verifications"
+                />
+              </Col>
             </Row>
             <Row className="mt-4">
               <Col>
@@ -1217,6 +1316,7 @@ const SalaryListPage = () => {
               <th>{t.table.gender}</th>
               <SortableHeader column="added_date" label={t.table.added_date} />
               <SortableHeader column="leave_days" label={t.table.leave_days} />
+              <th>{t.table.verified}</th>
               <StickyCell as="th" right="0">
                 {t.table.actions.name}
               </StickyCell>

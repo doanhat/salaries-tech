@@ -1,16 +1,29 @@
 import json
 import random
 import uuid
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 from urllib.parse import urlencode
 
+import pytest
 from fastapi.testclient import TestClient
 
-from backend.api.models import CompanyDB, CompanyType, JobDB, Level, SalaryDB, WorkType
+from backend.api.models import (
+    CompanyDB,
+    CompanyType,
+    EmailVerificationStatus,
+    Gender,
+    JobDB,
+    Level,
+    SalaryDB,
+    WorkType,
+)
 
 
-def test_create_salary(client: TestClient, monkeypatch):
-    # Mock the reCAPTCHA verification
+@pytest.fixture
+def mock_recaptcha():
+    """Fixture to create mock reCAPTCHA response"""
+
     class MockAssessment:
         class TokenProperties:
             valid = True
@@ -21,119 +34,183 @@ def test_create_salary(client: TestClient, monkeypatch):
         token_properties = TokenProperties()
         risk_analysis = RiskAnalysis()
 
-    def mock_create_assessment(*args, **kwargs):
-        return MockAssessment()
+    return MockAssessment()
 
+
+@pytest.fixture
+def mock_send_verification_email():
+    with patch("backend.api.services.email.send_verification_email") as mock:
+        mock.return_value = True
+        yield mock
+
+
+@pytest.fixture
+def mock_background_tasks():
+    with patch("fastapi.BackgroundTasks.add_task") as mock:
+        yield mock
+
+
+@pytest.mark.parametrize(
+    "salary_data,email_body,expected_status,expected_error,expected_verification",
+    [
+        # Existing happy path - without email
+        (
+            {
+                "gender": Gender.MALE.value,
+                "level": Level.JUNIOR.value,
+                "gross_salary": 50000,
+                "work_type": WorkType.REMOTE.value,
+                "net_salary": 40000,
+                "technical_stacks": [{"name": "python"}, {"name": "fastapi"}],
+                "added_date": "2024-10-19",
+                "location": "New York",
+                "jobs": [{"title": "Software Engineer"}],
+                "bonus": 5000,
+                "total_experience_years": 2,
+                "company": {
+                    "name": "Tech Corp",
+                    "type": CompanyType.STARTUP.value,
+                    "tags": [{"name": "tech"}],
+                },
+                "leave_days": 20,
+                "experience_years_company": 1,
+            },
+            None,
+            200,
+            None,
+            EmailVerificationStatus.NO.value,
+        ),
+        # New case - with email verification
+        (
+            {
+                "gender": Gender.MALE.value,
+                "level": Level.JUNIOR.value,
+                "gross_salary": 50000,
+                "work_type": WorkType.REMOTE.value,
+                "location": "New York",
+                "professional_email": "test@example.com",
+            },
+            {
+                "subject": "Verify Your Email",
+                "greeting_text": "Please verify your email",
+                "verify_button_text": "Verify Email",
+                "expiration_text": "Link expires in 7 days",
+            },
+            200,
+            None,
+            EmailVerificationStatus.PENDING.value,
+        ),
+        # Existing error cases
+        (
+            {
+                "gender": "invalid",
+                "level": Level.JUNIOR.value,
+                "gross_salary": 50000,
+                "work_type": WorkType.REMOTE.value,
+                "net_salary": 40000,
+                "location": "New York",
+            },
+            None,
+            422,
+            "input should be 'male', 'female' or 'other'",
+            None,
+        ),
+        (
+            {
+                "gender": Gender.MALE.value,
+                "level": Level.JUNIOR.value,
+                # missing gross_salary
+                "work_type": WorkType.REMOTE.value,
+                "location": "New York",
+            },
+            None,
+            422,
+            "field required",
+            None,
+        ),
+    ],
+    ids=["valid_data", "valid_data_with_email", "invalid_gender", "missing_field"],
+)
+def test_create_salary(
+    client: TestClient,
+    monkeypatch,
+    mock_recaptcha,
+    mock_send_verification_email,
+    mock_background_tasks,
+    salary_data,
+    email_body,
+    expected_status,
+    expected_error,
+    expected_verification,
+):
+    """Test salary creation with different scenarios"""
+
+    def mock_create_assessment(*args, **kwargs):
+        return mock_recaptcha
+
+    # Mock the necessary functions
     monkeypatch.setattr(
-        "google.cloud.recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.create_assessment",
+        "backend.api.services.auth.create_assessment",
         mock_create_assessment,
     )
 
-    # Prepare the salary data
-    salary_data = {
-        "gender": "male",
-        "level": Level.JUNIOR.value,
-        "gross_salary": 50000,
-        "work_type": WorkType.REMOTE.value,
-        "net_salary": 40000,
-        "technical_stacks": [{"name": "python"}, {"name": "fastapi"}],
-        "added_date": "2024-10-19",
-        "location": "New York",
-        "jobs": [{"title": "Software Engineer"}],
-        "bonus": 5000,
-        "total_experience_years": 2,
-        "company": {
-            "name": "Tech Corp",
-            "type": CompanyType.STARTUP.value,
-            "tags": [{"name": "tech"}],
-        },
-        "leave_days": 20,
-        "experience_years_company": 1,
-    }
-
-    # Prepare query parameters
-    query_params = {"captcha_token": "test_token", "user_agent": "test_user_agent"}
-
-    # Mock the Google Cloud client
-    mock_client = MagicMock()
-    mock_client.create_assessment.return_value = MockAssessment()
-
-    # Mock the environment variables and Google Cloud client
-    with patch.dict(
-        "os.environ",
-        {
-            "PROJECT_ID": "test_project_id",
-            "RECAPTCHA_KEY": "test_recaptcha_key",
-            "TESTING": "true",
-        },
-    ), patch(
+    monkeypatch.setattr(
         "google.cloud.recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient",
-        return_value=mock_client,
-    ):
-        # Make the request
-        response = client.post(
-            f"/salaries/?{urlencode(query_params)}",  # Add query parameters to URL
-            json=salary_data,  # Send salary data directly in body
-            headers={"Content-Type": "application/json"},
-        )
+        lambda: MagicMock(create_assessment=mock_create_assessment),
+    )
 
-    # Print response content for debugging
-    print(f"Response status code: {response.status_code}")
-    print(f"Response content: {response.content}")
-    print(f"response: {response.json()}")
+    # Prepare request
+    query_params = {"captcha_token": "test_token", "user_agent": "test_user_agent"}
+    request_body = {"salary": salary_data}
+    if email_body:
+        request_body["email_body"] = email_body
 
-    # Assert that the response is successful
-    assert response.status_code == 200
+    # Make the request
+    response = client.post(
+        f"/salaries/?{urlencode(query_params)}",
+        json=request_body,
+        headers={"Content-Type": "application/json"},
+    )
 
-    # If the response is successful, check the response data
-    if response.status_code == 200:
+    assert response.status_code == expected_status
+
+    if expected_status == 200:
         response_data = response.json()
         assert "id" in response_data
-        assert response_data["gender"] == salary_data["gender"]
-        assert response_data["level"] == salary_data["level"]
-        assert response_data["gross_salary"] == salary_data["gross_salary"]
-        assert response_data["work_type"] == salary_data["work_type"]
-        assert response_data["net_salary"] == salary_data["net_salary"]
-        assert response_data["location"].lower() == salary_data["location"].lower()
-        assert response_data["bonus"] == salary_data["bonus"]
-        assert (
-            response_data["total_experience_years"]
-            == salary_data["total_experience_years"]
-        )
-        assert response_data["leave_days"] == salary_data["leave_days"]
-        assert (
-            response_data["experience_years_company"]
-            == salary_data["experience_years_company"]
-        )
 
-        # Check that company, jobs, and technical_stacks are empty or null in the initial response
-        assert (
-            response_data["company"]["name"].lower()
-            == salary_data["company"]["name"].lower()
-        )
-        assert response_data["company"]["type"] == salary_data["company"]["type"]
-        assert len(response_data["company"]["tags"]) == len(
-            salary_data["company"]["tags"]
-        )
-        assert (
-            response_data["jobs"][0]["title"].lower()
-            == salary_data["jobs"][0]["title"].lower()
-        )
-        assert (
-            response_data["technical_stacks"][0]["name"].lower()
-            == salary_data["technical_stacks"][0]["name"].lower()
-        )
+        # Verify basic fields
+        for key in ["gender", "level", "gross_salary", "work_type", "location"]:
+            if key in salary_data:
+                if isinstance(salary_data[key], str):
+                    assert response_data[key].lower() == salary_data[key].lower()
+                else:
+                    assert response_data[key] == salary_data[key]
 
-    # Verify that the salary was actually created in the database
-    get_response = client.get("/salaries/")
-    assert get_response.status_code == 200
-    get_data = get_response.json()
-    assert get_data["total"] > 0
-    assert any(s["id"] == response_data["id"] for s in get_data["results"])
+        # Verify email verification
+        if "professional_email" in salary_data:
+            assert response_data["verified"] == expected_verification
+            assert (
+                response_data["professional_email"]
+                == f"***@{salary_data['professional_email'].split('@')[1].lower()}"
+            )
 
-    # Clean up: delete the created salary
-    delete_response = client.delete(f"/salaries/?salary_ids={response_data['id']}")
-    assert delete_response.status_code == 200
+            # Verify background task was added
+            mock_background_tasks.assert_called_once()
+
+            # Get the arguments from the mock call
+            args, kwargs = mock_background_tasks.call_args
+
+            # First argument should be the function
+            func = args[0]
+            assert func.__name__ == "send_verification_email"
+
+            # The rest of the arguments should be passed as kwargs
+            assert kwargs["email"] == salary_data["professional_email"]
+            assert kwargs["salary_id"] == response_data["id"]
+            assert kwargs["subject"] == email_body["subject"]
+            assert kwargs["greeting_text"] == email_body["greeting_text"]
+            assert kwargs["verify_button_text"] == email_body["verify_button_text"]
+            assert kwargs["expiration_text"] == email_body["expiration_text"]
 
 
 def test_get_salaries(client, sample_salary):

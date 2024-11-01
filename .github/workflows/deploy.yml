@@ -103,7 +103,7 @@ jobs:
       if: env.DEPLOY_BACKEND == 'true'
       run: |
         make set-backend-env PROJECT_ID=${{ secrets.GCP_PROJECT_ID }} RECAPTCHA_KEY=${{ secrets.RECAPTCHA_KEY }}
-        make deploy-backend SQLALCHEMY_DATABASE_URL=${{ secrets.SQLALCHEMY_DATABASE_URL }} ENV=prod
+        make deploy-backend SQLALCHEMY_DATABASE_URL=${{ secrets.SQLALCHEMY_DATABASE_URL }} ENV=prod SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }} SENDGRID_FROM_EMAIL=${{ secrets.SENDGRID_FROM_EMAIL }}
 
   frontend:
     runs-on: ubuntu-latest

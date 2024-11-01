@@ -1,17 +1,28 @@
-import os
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Body,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+)
+from jose import jwt
 from pydantic import ValidationError
 from sqlalchemy import asc, delete, desc, func
 from sqlalchemy.orm import Session
 
+from ..config.env import EMAIL_VERIFICATION_SECRET_NAME, PROJECT_ID, RECAPTCHA_KEY
 from ..config.logger import logger
 from ..database import get_db_session
 from ..models import (
     Company,
     CompanyDB,
+    EmailBody,
+    EmailVerificationStatus,
     Job,
     JobDB,
     Salary,
@@ -23,7 +34,8 @@ from ..models import (
     salary_job,
     salary_technical_stack,
 )
-from ..services.auth import create_assessment
+from ..services.auth import create_assessment, get_hash_key
+from ..services.email import send_verification_email
 
 router = APIRouter(prefix="/salaries", tags=["salaries"])
 
@@ -31,15 +43,17 @@ router = APIRouter(prefix="/salaries", tags=["salaries"])
 @router.post("/", response_model=Salary)
 async def create_salary(
     request: Request,
+    background_tasks: BackgroundTasks,
     captcha_token: str = Query(...),
     user_agent: str = Query(...),
     salary: Salary = Body(...),
+    email_body: Optional[EmailBody] = Body(None),
     db: Session = Depends(get_db_session),
 ) -> Salary:
     try:
         # Verify reCAPTCHA
-        project_id = os.getenv("PROJECT_ID")
-        recaptcha_key = os.getenv("RECAPTCHA_KEY")
+        project_id = PROJECT_ID
+        recaptcha_key = RECAPTCHA_KEY
         user_ip = request.client.host if request.client else None
 
         if not project_id or not recaptcha_key:
@@ -55,7 +69,19 @@ async def create_salary(
         if assessment.risk_analysis.score < 0.5:  # Adjust this threshold as needed
             raise HTTPException(status_code=400, detail="reCAPTCHA verification failed")
 
-        salary_dict = salary.model_dump(exclude={"company", "jobs", "technical_stacks"})
+        salary_dict = salary.model_dump(
+            exclude={"company", "jobs", "technical_stacks", "professional_email"}
+        )
+
+        # Handle email verification status
+        if salary.professional_email and email_body:
+            professional_email = salary.professional_email
+            salary_dict["email_domain"] = professional_email.split("@")[1].lower()
+            salary_dict["verified"] = EmailVerificationStatus.PENDING
+        else:
+            professional_email = None
+            salary_dict["email_domain"] = None
+            salary_dict["verified"] = EmailVerificationStatus.NO
 
         if "added_date" not in salary_dict or not salary_dict["added_date"]:
             salary_dict["added_date"] = datetime.now().date()
@@ -122,6 +148,7 @@ async def create_salary(
 
         db.commit()
         db.refresh(db_salary)
+
         created_salary = Salary(
             **{c.name: getattr(db_salary, c.name) for c in db_salary.__table__.columns}
         )
@@ -149,6 +176,18 @@ async def create_salary(
                 )
                 for stack in db_salary.technical_stacks
             ]
+        if db_salary.email_domain:
+            created_salary.professional_email = f"***@{db_salary.email_domain}"
+        if professional_email and email_body:
+            background_tasks.add_task(
+                send_verification_email,
+                email=professional_email,
+                salary_id=int(db_salary.id),
+                subject=email_body.subject,
+                greeting_text=email_body.greeting_text,
+                verify_button_text=email_body.verify_button_text,
+                expiration_text=email_body.expiration_text,
+            )
         return created_salary
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=e.errors())
@@ -540,3 +579,26 @@ async def get_top_locations_by_salary(db: Session = Depends(get_db_session)):
     except Exception as e:
         logger.error(f"Error in get_top_locations_by_salary: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/verify-email/")
+async def verify_email(token: str, db: Session = Depends(get_db_session)):
+    try:
+        hash_key = get_hash_key(EMAIL_VERIFICATION_SECRET_NAME)
+        payload = jwt.decode(token, hash_key, algorithms=["HS256"])
+        salary_id = payload.get("salary_id")
+        email = payload.get("email")
+
+        if not salary_id or not email:
+            raise HTTPException(status_code=400, detail="Invalid token")
+
+        salary = db.query(SalaryDB).filter(SalaryDB.id == salary_id).first()
+        if not salary:
+            raise HTTPException(status_code=404, detail="Salary not found")
+
+        setattr(salary, "verified", EmailVerificationStatus.VERIFIED.value)
+        db.commit()
+
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

@@ -1,5 +1,4 @@
 import axios from "axios";
-
 export const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
 
@@ -88,7 +87,12 @@ export const getSalaries = async (
   };
 };
 
-export const addSalary = async (salaryData, captchaToken, userAgent) => {
+export const addSalary = async (
+  salaryData,
+  captchaToken,
+  userAgent,
+  emailBody,
+) => {
   try {
     // Format the data
     const formattedData = {
@@ -123,6 +127,7 @@ export const addSalary = async (salaryData, captchaToken, userAgent) => {
       experience_years_company: salaryData.experience_years_company
         ? parseInt(salaryData.experience_years_company)
         : null,
+      professional_email: salaryData.professional_email || null,
     };
 
     // Add query parameters for captcha and user agent
@@ -131,13 +136,20 @@ export const addSalary = async (salaryData, captchaToken, userAgent) => {
       user_agent: userAgent,
     });
 
+    const emailData = {
+      subject: emailBody.subject,
+      greeting_text: emailBody.greeting_text,
+      verify_button_text: emailBody.verify_button_text,
+      expiration_text: emailBody.expiration_text,
+    };
+
     const response = await fetch(`${API_BASE_URL}/salaries/?${queryParams}`, {
       method: "POST",
       headers: {
         ...(await getHeaders()),
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(formattedData),
+      body: JSON.stringify({ salary: formattedData, email_body: emailData }),
       credentials: "include",
     });
 
@@ -283,4 +295,12 @@ export const getTopLocationsByAverageSalary = async () => {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   return await response.json();
+};
+
+export const verifyEmail = async (token) => {
+  const headers = await getHeaders();
+  return await axios.get(
+    `${API_BASE_URL}/salaries/verify-email/?token=${token}`,
+    { headers },
+  );
 };
