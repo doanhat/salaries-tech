@@ -10,7 +10,6 @@ CAPTCHA_KEY := 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI # Google public site key
 LOCAL_BACKEND_URL := http://localhost:8000
 LOCAL_FRONTEND_URL := http://localhost:3000
 LOCAL_SQLALCHEMY_DATABASE_URL := sqlite:///./salaries.db
-LOCAL_API_KEY := local-api-key
 FIREBASE_SITE_NAME := salaries-tech
 API_KEY_SECRET_NAME := salaries-api-key
 EMAIL_VERIFICATION_SECRET_NAME := salaries-email-verification
@@ -141,11 +140,11 @@ set-local-env:
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
 		sed -i '' 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(CAPTCHA_KEY)"'|' frontend/.env; \
-		sed -i '' 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$(LOCAL_API_KEY)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$(API_KEY_SECRET_NAME)"'|' frontend/.env; \
 	else \
 		sed -i 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
 		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(CAPTCHA_KEY)"'|' frontend/.env; \
-		sed -i 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$(LOCAL_API_KEY)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$(API_KEY_SECRET_NAME)"'|' frontend/.env; \
 	fi
 
 .PHONY: run-local

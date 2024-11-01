@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import test_db
 
 from backend.api.models import (
     CompanyDB,
@@ -51,7 +52,7 @@ def mock_background_tasks():
 
 
 @pytest.mark.parametrize(
-    "salary_data,email_body,expected_status,expected_error,expected_verification",
+    "salary_data,email_body,expected_status,expected_verification",
     [
         # Existing happy path - without email
         (
@@ -77,7 +78,6 @@ def mock_background_tasks():
             },
             None,
             200,
-            None,
             EmailVerificationStatus.NO.value,
         ),
         # New case - with email verification
@@ -97,10 +97,8 @@ def mock_background_tasks():
                 "expiration_text": "Link expires in 7 days",
             },
             200,
-            None,
             EmailVerificationStatus.PENDING.value,
         ),
-        # Existing error cases
         (
             {
                 "gender": "invalid",
@@ -112,7 +110,6 @@ def mock_background_tasks():
             },
             None,
             422,
-            "input should be 'male', 'female' or 'other'",
             None,
         ),
         (
@@ -125,7 +122,6 @@ def mock_background_tasks():
             },
             None,
             422,
-            "field required",
             None,
         ),
     ],
@@ -135,12 +131,10 @@ def test_create_salary(
     client: TestClient,
     monkeypatch,
     mock_recaptcha,
-    mock_send_verification_email,
     mock_background_tasks,
     salary_data,
     email_body,
     expected_status,
-    expected_error,
     expected_verification,
 ):
     """Test salary creation with different scenarios"""
@@ -169,7 +163,6 @@ def test_create_salary(
     response = client.post(
         f"/salaries/?{urlencode(query_params)}",
         json=request_body,
-        headers={"Content-Type": "application/json"},
     )
 
     assert response.status_code == expected_status
@@ -232,31 +225,11 @@ def test_get_salaries(client, sample_salary):
     assert any(job["title"] == "Software Engineer" for job in added_salary["jobs"])
 
 
-def test_delete_salaries(client, test_db):
-    # Create test data
-    test_company = CompanyDB(name="Test Company", type="startup")
-    test_db.add(test_company)
-    test_db.flush()
-
-    test_job = JobDB(title="Test Job")
-    test_db.add(test_job)
-    test_db.flush()
-
-    test_salary = SalaryDB(
-        company_id=test_company.id,
-        location="Test City",
-        gross_salary=100000,
-        level=Level.MID.value,
-        work_type=WorkType.REMOTE.value,
-    )
-    test_salary.jobs.append(test_job)
-    test_db.add(test_salary)
-    test_db.commit()
-
-    salary_id = test_salary.id
+def test_delete_salaries(client, sample_salary, test_db):
+    salary_id = sample_salary.id
 
     # Verify that the salary was added
-    test_db.refresh(test_salary)
+    test_db.refresh(sample_salary)
     added_salary = test_db.query(SalaryDB).filter(SalaryDB.id == salary_id).first()
     assert (
         added_salary is not None
@@ -265,7 +238,9 @@ def test_delete_salaries(client, test_db):
     print(f"Added salary with ID: {salary_id}")
 
     # Now test the delete operation
-    delete_response = client.delete(f"/salaries/?salary_ids={salary_id}")
+    delete_response = client.delete(
+        f"/salaries/?salary_ids={salary_id}",
+    )
 
     # Check if the deletion was successful
     assert (
@@ -300,7 +275,10 @@ def test_get_choices(client):
 
 
 def test_create_and_get_technical_stack(client):
-    create_response = client.post("/technical-stacks/", json={"name": "Python"})
+    create_response = client.post(
+        "/technical-stacks/",
+        json={"name": "Python"},
+    )
     assert create_response.status_code == 200
     assert create_response.json()["name"] == "Python"
 
@@ -310,7 +288,10 @@ def test_create_and_get_technical_stack(client):
 
 
 def test_create_and_get_job(client):
-    create_response = client.post("/jobs/", json={"title": "Data Scientist"})
+    create_response = client.post(
+        "/jobs/",
+        json={"title": "Data Scientist"},
+    )
     assert create_response.status_code == 200
     assert create_response.json()["title"] == "data scientist"
 
@@ -321,14 +302,17 @@ def test_create_and_get_job(client):
     )
 
 
-def test_create_and_get_company(client, test_db):
+def test_create_and_get_company(client):
     unique_name = f"New Company {uuid.uuid4()}"
     create_data = {
         "name": unique_name,
         "type": CompanyType.STARTUP.value,
         "tags": [{"name": "tech"}, {"name": "AI"}],
     }
-    create_response = client.post("/companies/", json=create_data)
+    create_response = client.post(
+        "/companies/",
+        json=create_data,
+    )
     assert (
         create_response.status_code == 200
     ), f"Failed to create company: {create_response.content}"
@@ -339,7 +323,9 @@ def test_create_and_get_company(client, test_db):
     assert len(created_company["tags"]) == 2
 
     # Test getting the created company
-    get_response = client.get(f"/companies/")
+    get_response = client.get(
+        f"/companies/",
+    )
     assert get_response.status_code == 200
 
     retrieved_company = get_response.json()["results"][0]
@@ -356,7 +342,9 @@ def test_delete_companies(client, test_db):
     test_db.commit()
 
     # Delete the company
-    response = client.delete(f"/companies/?company_ids={company.id}")
+    response = client.delete(
+        f"/companies/?company_ids={company.id}",
+    )
     assert response.status_code == 200
     assert "deleted successfully" in response.json()["message"]
 
@@ -377,19 +365,26 @@ def test_check_endpoints(client):
     ]
 
     for endpoint, params in endpoints:
-        response = client.get(endpoint, params=params)
+        response = client.get(
+            endpoint,
+            params=params,
+        )
         assert response.status_code == 200
         assert "exists" in response.json()
 
 
 def test_get_salaries_pagination_and_sorting(client):
     # Test pagination
-    response = client.get("/salaries/?skip=0&limit=10")
+    response = client.get(
+        "/salaries/?skip=0&limit=10",
+    )
     assert response.status_code == 200
     assert len(response.json()["results"]) <= 10
 
     # Test sorting
-    response = client.get("/salaries/?sort_by=gross_salary&sort_order=desc")
+    response = client.get(
+        "/salaries/?sort_by=gross_salary&sort_order=desc",
+    )
     assert response.status_code == 200
     salaries = response.json()["results"]
     assert all(
@@ -400,7 +395,9 @@ def test_get_salaries_pagination_and_sorting(client):
 
 def test_get_salaries_filtering(client):
     # Test filtering by company name
-    response = client.get("/salaries/?company_names=Tech%20Corp")
+    response = client.get(
+        "/salaries/?company_names=Tech%20Corp",
+    )
     assert response.status_code == 200
     assert all(
         salary["company"]["name"] == "Tech Corp"
@@ -408,7 +405,9 @@ def test_get_salaries_filtering(client):
     )
 
     # Test filtering by job title
-    response = client.get("/salaries/?job_titles=Software%20Engineer")
+    response = client.get(
+        "/salaries/?job_titles=Software%20Engineer",
+    )
     assert response.status_code == 200
     assert all(
         any(job["title"] == "software engineer" for job in salary["jobs"])
@@ -416,7 +415,9 @@ def test_get_salaries_filtering(client):
     )
 
     # Test filtering by salary range
-    response = client.get("/salaries/?gross_salary_min=50000&gross_salary_max=100000")
+    response = client.get(
+        "/salaries/?gross_salary_min=50000&gross_salary_max=100000",
+    )
     assert response.status_code == 200
     assert all(
         50000 <= salary["gross_salary"] <= 100000
@@ -433,7 +434,8 @@ def test_error_handling(client):
         "work_type": "invalid",
     }
     response = client.post(
-        "/salaries/", data={"salary": json.dumps(invalid_salary_data)}
+        "/salaries/",
+        data={"salary": json.dumps(invalid_salary_data)},
     )
     assert response.status_code == 422
 
@@ -499,8 +501,7 @@ def test_get_top_locations_by_salary(client, test_db):
         for _ in range(5):  # Create 5 salaries for each location
             salary = SalaryDB(
                 location=location,
-                gross_salary=avg_salary
-                + random.randint(-5000, 5000),  # Add some variation
+                gross_salary=avg_salary + random.randint(-5000, 5000),
                 net_salary=avg_salary * 0.8,
                 gender="male",
                 level="junior",

@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import date
+from typing import Any, Dict, Optional
 
 import pytest
 from fastapi.testclient import TestClient
@@ -73,8 +74,32 @@ def reset_db(test_db, test_engine):
 
 
 # Client fixtures
+class AuthenticatedTestClient(TestClient):
+    """Custom TestClient that includes API key header in all requests"""
+
+    def request(
+        self,
+        method: str,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> TestClient:
+        """Override request method to include API key header"""
+        headers = headers or {}
+        headers.update({"X-API-Key": "test_api_key"})
+        return super().request(method, url, headers=headers, **kwargs)
+
+
 @pytest.fixture(scope="function")
 def client(override_get_db, reset_db):
+    app.dependency_overrides[get_db_session] = override_get_db
+    with AuthenticatedTestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def unauthenticated_client(override_get_db, reset_db):
     app.dependency_overrides[get_db_session] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
