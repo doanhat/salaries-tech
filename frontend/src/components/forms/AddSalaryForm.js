@@ -64,7 +64,107 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    const numValue = value === "" ? null : parseFloat(value);
+
+    // Update form data
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear previous error for this field
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[name]; // Remove the error for this field
+      return newErrors;
+    });
+
+    // Skip other validations if value is empty
+    if (value === "" || value === null) return;
+
+    // Validate negative values
+    if (numValue !== null && numValue < 0) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: t.entities.errors.negative_value,
+      }));
+      return;
+    }
+
+    // Specific validations based on field
+    switch (name) {
+      case "net_salary":
+        if (numValue !== null && formData.gross_salary) {
+          const grossValue = parseFloat(formData.gross_salary);
+          if (numValue >= grossValue) {
+            setErrors((prev) => ({
+              ...prev,
+              net_salary: t.entities.errors.net_salary_exceeds_gross,
+            }));
+          }
+        }
+        break;
+
+      case "gross_salary":
+        if (numValue !== null && formData.net_salary) {
+          const netValue = parseFloat(formData.net_salary);
+          if (netValue >= numValue) {
+            setErrors((prev) => ({
+              ...prev,
+              net_salary: t.entities.errors.net_salary_exceeds_gross,
+            }));
+          } else {
+            // Clear net salary error if validation passes
+            setErrors((prev) => {
+              const newErrors = { ...prev };
+              delete newErrors.net_salary;
+              return newErrors;
+            });
+          }
+        }
+        break;
+
+      case "experience_years_company":
+        if (numValue !== null && formData.total_experience_years) {
+          const totalExp = parseFloat(formData.total_experience_years);
+          if (numValue > totalExp) {
+            setErrors((prev) => ({
+              ...prev,
+              experience_years_company:
+                t.entities.errors.company_experience_exceeds_total,
+            }));
+          }
+        }
+        break;
+
+      case "total_experience_years":
+        if (numValue !== null && formData.experience_years_company) {
+          const companyExp = parseFloat(formData.experience_years_company);
+          if (companyExp > numValue) {
+            setErrors((prev) => ({
+              ...prev,
+              experience_years_company:
+                t.entities.errors.company_experience_exceeds_total,
+            }));
+          } else {
+            // Clear company experience error if validation passes
+            setErrors((prev) => {
+              const newErrors = { ...prev };
+              delete newErrors.experience_years_company;
+              return newErrors;
+            });
+          }
+        }
+        break;
+
+      case "leave_days":
+        if (numValue !== null && numValue >= 365) {
+          setErrors((prev) => ({
+            ...prev,
+            leave_days: t.entities.errors.leave_days_exceed_year,
+          }));
+        }
+        break;
+      default:
+        break;
+    }
   };
 
   const handleSelectChange = async (name, selectedOption) => {
@@ -163,6 +263,8 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
     }
 
     const newErrors = {};
+
+    // Required fields validation
     if (!formData.location) newErrors.location = t.entities.errors.location;
     if (!formData.gross_salary)
       newErrors.gross_salary = t.entities.errors.gross_salary;
@@ -170,11 +272,55 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
       newErrors.job_titles = t.entities.errors.job_titles;
     if (isNewCompany && !formData.company_type)
       newErrors.company_type = t.entities.errors.company_type;
+
+    // Email validation
     if (
       formData.professional_email &&
       !validateEmail(formData.professional_email)
-    )
+    ) {
       newErrors.professional_email = t.entities.errors.professional_email;
+    }
+
+    // Numeric fields validation
+    const numericFields = [
+      "net_salary",
+      "gross_salary",
+      "bonus",
+      "experience_years_company",
+      "total_experience_years",
+      "leave_days",
+    ];
+    numericFields.forEach((field) => {
+      if (formData[field] && formData[field] < 0) {
+        newErrors[field] = t.entities.errors.negative_value;
+      }
+    });
+
+    // Salary comparison validation
+    if (
+      formData.net_salary &&
+      formData.gross_salary &&
+      parseFloat(formData.net_salary) >= parseFloat(formData.gross_salary)
+    ) {
+      newErrors.net_salary = t.entities.errors.net_salary_exceeds_gross;
+    }
+
+    // Experience years validation
+    if (
+      formData.experience_years_company &&
+      formData.total_experience_years &&
+      parseFloat(formData.experience_years_company) >
+        parseFloat(formData.total_experience_years)
+    ) {
+      newErrors.experience_years_company =
+        t.entities.errors.company_experience_exceeds_total;
+    }
+
+    // Leave days validation
+    if (formData.leave_days && parseFloat(formData.leave_days) >= 365) {
+      newErrors.leave_days = t.entities.errors.leave_days_exceed_year;
+    }
+
     if (
       Object.keys(newErrors).length > 0 ||
       Object.values(errors).some((error) => error !== null)
@@ -326,6 +472,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   value={formData.job_titles.map(createOption)}
                   isOptionDisabled={() => formData.job_titles.length >= 2}
                   placeholder={t.entities.job.titles.placeholder}
+                  isInvalid={!!errors.job_titles}
                 />
                 <Form.Text className="text-muted">
                   {formData.job_titles.length}/2{" "}
@@ -354,6 +501,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                     formData.location ? createOption(formData.location) : null
                   }
                   placeholder={t.entities.location.placeholder}
+                  isInvalid={!!errors.location}
                 />
                 {errors.location && (
                   <Form.Text className="text-danger">
@@ -373,7 +521,13 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   name="net_salary"
                   value={formData.net_salary}
                   onChange={handleInputChange}
+                  isInvalid={!!errors.net_salary}
                 />
+                {errors.net_salary && (
+                  <Form.Control.Feedback type="invalid">
+                    {errors.net_salary}
+                  </Form.Control.Feedback>
+                )}
               </Form.Group>
             </Col>
             <Col md={4}>
@@ -388,11 +542,12 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   value={formData.gross_salary}
                   onChange={handleInputChange}
                   required
+                  isInvalid={!!errors.gross_salary}
                 />
                 {errors.gross_salary && (
-                  <Form.Text className="text-danger">
+                  <Form.Control.Feedback type="invalid">
                     {errors.gross_salary}
-                  </Form.Text>
+                  </Form.Control.Feedback>
                 )}
               </Form.Group>
             </Col>
@@ -453,7 +608,13 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   name="experience_years_company"
                   value={formData.experience_years_company}
                   onChange={handleInputChange}
+                  isInvalid={!!errors.experience_years_company}
                 />
+                {errors.experience_years_company && (
+                  <Form.Control.Feedback type="invalid">
+                    {errors.experience_years_company}
+                  </Form.Control.Feedback>
+                )}
               </Form.Group>
             </Col>
             <Col md={6}>
@@ -466,7 +627,13 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   name="total_experience_years"
                   value={formData.total_experience_years}
                   onChange={handleInputChange}
+                  isInvalid={!!errors.total_experience_years}
                 />
+                {errors.total_experience_years && (
+                  <Form.Control.Feedback type="invalid">
+                    {errors.total_experience_years}
+                  </Form.Control.Feedback>
+                )}
               </Form.Group>
             </Col>
           </Row>
@@ -498,7 +665,13 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   name="leave_days"
                   value={formData.leave_days}
                   onChange={handleInputChange}
+                  isInvalid={!!errors.leave_days}
                 />
+                {errors.leave_days && (
+                  <Form.Control.Feedback type="invalid">
+                    {errors.leave_days}
+                  </Form.Control.Feedback>
+                )}
               </Form.Group>
             </Col>
           </Row>
@@ -526,11 +699,12 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
                   backspaceRemovesValue={true}
                   placeholder={t.entities.technical_stacks.placeholder}
+                  isInvalid={!!errors.technical_stacks}
                 />
                 {errors.technical_stacks && (
-                  <Form.Text className="text-danger">
+                  <Form.Control.Feedback type="invalid">
                     {errors.technical_stacks}
-                  </Form.Text>
+                  </Form.Control.Feedback>
                 )}
               </Form.Group>
             </Col>
@@ -546,9 +720,6 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   onChange={handleInputChange}
                   isInvalid={!!errors.professional_email}
                 />
-                <Form.Text className="text-muted">
-                  {t.entities.professional_email.help}
-                </Form.Text>
                 <Form.Control.Feedback type="invalid">
                   {errors.professional_email}
                 </Form.Control.Feedback>

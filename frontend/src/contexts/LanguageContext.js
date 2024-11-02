@@ -187,6 +187,13 @@ export const translations = {
         exists: "Cette {field} existe déjà",
         submit: "Erreur lors de l'ajout du salaire. Veuillez réessayer.",
         no_salaries: "Aucun salaire trouvé.",
+        negative_value: "La valeur ne peut pas être négative",
+        net_salary_exceeds_gross:
+          "Le salaire net ne peut pas être supérieur au salaire brut",
+        company_experience_exceeds_total:
+          "L'expérience dans l'entreprise ne peut pas dépasser l'expérience totale",
+        leave_days_exceed_year:
+          "Les jours de congé ne peuvent pas dépasser 365 jours",
       },
       info: {
         select: "Sélectionner",
@@ -372,6 +379,12 @@ export const translations = {
         exists: "{field} already exists",
         submit: "Error adding salary. Please try again.",
         no_salaries: "No salaries found.",
+        negative_value: "Value cannot be negative",
+        net_salary_exceeds_gross:
+          "Net salary cannot be greater than gross salary",
+        company_experience_exceeds_total:
+          "Company experience cannot exceed total experience",
+        leave_days_exceed_year: "Leave days cannot exceed 365 days",
       },
       info: {
         select: "Select",
