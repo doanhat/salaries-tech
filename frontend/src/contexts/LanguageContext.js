@@ -169,8 +169,10 @@ export const translations = {
           on: "Afficher les graphiques",
           off: "Masquer les graphiques",
         },
-        show_results: "Afficher",
         close: "Fermer",
+        pagination: {
+          show: "Afficher",
+        },
       },
       errors: {
         captcha: "Veuillez compléter le reCAPTCHA",
@@ -353,8 +355,10 @@ export const translations = {
           on: "Show charts",
           off: "Hide charts",
         },
-        show_results: "Show",
         close: "Close",
+        pagination: {
+          show: "Show",
+        },
       },
       errors: {
         captcha: "Please complete the reCAPTCHA",
@@ -377,6 +381,13 @@ export const translations = {
         add_salary_success: "Salary added successfully!",
         add_salary_success_email:
           "Salary added successfully! Please verify your email for verification. It may take a few hours to arrive. (I'm using a free plan so it might be slow :( )",
+      },
+      pagination: {
+        of: "of",
+        entries: "entries",
+        per_page: "per page",
+        previous: "Previous",
+        next: "Next",
       },
     },
     email_verification_page: {

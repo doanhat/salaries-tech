@@ -208,22 +208,33 @@ async def get_salaries(
     work_types: Optional[str] = Query(
         None, description="Comma-separated list of work types"
     ),
-    gross_salary_min: Optional[float] = None,
-    gross_salary_max: Optional[float] = None,
-    experience_years_company_min: Optional[int] = None,
-    experience_years_company_max: Optional[int] = None,
-    total_experience_years_min: Optional[int] = None,
-    total_experience_years_max: Optional[int] = None,
-    leave_days_min: Optional[int] = None,
-    leave_days_max: Optional[int] = None,
-    min_added_date: Optional[str] = None,
-    max_added_date: Optional[str] = None,
-    net_salary_min: Optional[float] = None,
-    net_salary_max: Optional[float] = None,
-    bonus_min: Optional[float] = None,
-    bonus_max: Optional[float] = None,
+    gross_salary_min: Optional[float] = Query(None, description="Minimum gross salary"),
+    gross_salary_max: Optional[float] = Query(None, description="Maximum gross salary"),
+    experience_years_company_min: Optional[int] = Query(
+        None, description="Minimum experience years in company"
+    ),
+    experience_years_company_max: Optional[int] = Query(
+        None, description="Maximum experience years in company"
+    ),
+    total_experience_years_min: Optional[int] = Query(
+        None, description="Minimum total experience years"
+    ),
+    total_experience_years_max: Optional[int] = Query(
+        None, description="Maximum total experience years"
+    ),
+    leave_days_min: Optional[int] = Query(None, description="Minimum leave days"),
+    leave_days_max: Optional[int] = Query(None, description="Maximum leave days"),
+    min_added_date: Optional[str] = Query(None, description="Minimum added date"),
+    max_added_date: Optional[str] = Query(None, description="Maximum added date"),
+    net_salary_min: Optional[float] = Query(None, description="Minimum net salary"),
+    net_salary_max: Optional[float] = Query(None, description="Maximum net salary"),
+    bonus_min: Optional[float] = Query(None, description="Minimum bonus"),
+    bonus_max: Optional[float] = Query(None, description="Maximum bonus"),
     technical_stacks: Optional[str] = Query(
         None, description="Comma-separated list of technical stacks"
+    ),
+    verified: Optional[str] = Query(
+        None, description="Comma-separated list of verified statuses"
     ),
 ) -> Dict[str, List[Salary] | int]:
     try:
@@ -236,28 +247,79 @@ async def get_salaries(
         query = db.query(SalaryDB).outerjoin(CompanyDB)
         if company_names:
             companies_list = [c.strip() for c in company_names.split(",")]
-            query = query.filter(CompanyDB.name.in_(companies_list))
+            if "N/A" not in companies_list:
+                query = query.filter(CompanyDB.name.in_(companies_list))
+            else:
+                query = query.filter(
+                    CompanyDB.name.in_(companies_list)
+                    | SalaryDB.company_id.is_(None)
+                    | CompanyDB.name.is_(None)
+                )
         if company_tags:
             tags_list = [t.strip().lower() for t in company_tags.split(",")]
-            query = query.filter(CompanyDB.tags.any(TagDB.name.in_(tags_list)))
+            if "n/a" not in tags_list:
+                query = query.filter(CompanyDB.tags.any(TagDB.name.in_(tags_list)))
+            else:
+                print("N/A")
+                query = query.filter(
+                    CompanyDB.tags.any(TagDB.name.in_(tags_list))
+                    | ~CompanyDB.tags.any()
+                    | SalaryDB.company_id.is_(None)
+                )
         if company_types:
             company_types_list = [ct.strip().lower() for ct in company_types.split(",")]
-            query = query.filter(CompanyDB.type.in_(company_types_list))
+            if "n/a" not in company_types_list:
+                query = query.filter(CompanyDB.type.in_(company_types_list))
+            else:
+                query = query.filter(
+                    CompanyDB.type.in_(company_types_list)
+                    | CompanyDB.type.is_(None)
+                    | SalaryDB.company_id.is_(None)
+                )
         if job_titles:
             job_titles_list = [jt.strip().lower() for jt in job_titles.split(",")]
-            query = query.filter(SalaryDB.jobs.any(JobDB.title.in_(job_titles_list)))
+            if "n/a" not in job_titles_list:
+                query = query.filter(
+                    SalaryDB.jobs.any(JobDB.title.in_(job_titles_list))
+                )
+            else:
+                query = query.filter(
+                    SalaryDB.jobs.any(JobDB.title.in_(job_titles_list))
+                    | ~SalaryDB.jobs.any()
+                )
         if locations:
             locations_list = [l.strip().lower() for l in locations.split(",")]
-            query = query.filter(SalaryDB.location.in_(locations_list))
+            if "n/a" not in locations_list:
+                query = query.filter(SalaryDB.location.in_(locations_list))
+            else:
+                query = query.filter(
+                    SalaryDB.location.in_(locations_list) | SalaryDB.location.is_(None)
+                )
         if genders:
             genders_list = [g.strip().lower() for g in genders.split(",")]
-            query = query.filter(SalaryDB.gender.in_(genders_list))
+            if "n/a" not in genders_list:
+                query = query.filter(SalaryDB.gender.in_(genders_list))
+            else:
+                query = query.filter(
+                    SalaryDB.gender.in_(genders_list) | SalaryDB.gender.is_(None)
+                )
         if levels:
             levels_list = [l.strip().lower() for l in levels.split(",")]
-            query = query.filter(SalaryDB.level.in_(levels_list))
+            if "n/a" not in levels_list:
+                query = query.filter(SalaryDB.level.in_(levels_list))
+            else:
+                query = query.filter(
+                    SalaryDB.level.in_(levels_list) | SalaryDB.level.is_(None)
+                )
         if work_types:
             work_types_list = [wt.strip().lower() for wt in work_types.split(",")]
-            query = query.filter(SalaryDB.work_type.in_(work_types_list))
+            if "n/a" not in work_types_list:
+                query = query.filter(SalaryDB.work_type.in_(work_types_list))
+            else:
+                query = query.filter(
+                    SalaryDB.work_type.in_(work_types_list)
+                    | SalaryDB.work_type.is_(None)
+                )
 
         if gross_salary_min is not None:
             query = query.filter(
@@ -298,7 +360,9 @@ async def get_salaries(
         if min_added_date:
             try:
                 min_date = datetime.strptime(min_added_date, "%Y-%m-%d").date()
-                query = query.filter(SalaryDB.added_date >= min_date)
+                query = query.filter(
+                    func.coalesce(SalaryDB.added_date, None) >= min_date
+                )
             except ValueError:
                 logger.error(f"Invalid min_added_date format: {min_added_date}")
                 raise HTTPException(
@@ -308,7 +372,9 @@ async def get_salaries(
         if max_added_date:
             try:
                 max_date = datetime.strptime(max_added_date, "%Y-%m-%d").date()
-                query = query.filter(SalaryDB.added_date <= max_date)
+                query = query.filter(
+                    func.coalesce(SalaryDB.added_date, None) <= max_date
+                )
             except ValueError:
                 logger.error(f"Invalid max_added_date format: {max_added_date}")
                 raise HTTPException(
@@ -331,12 +397,27 @@ async def get_salaries(
             tech_stacks_list = [
                 stack.strip().lower() for stack in technical_stacks.split(",")
             ]
-            query = query.filter(
-                SalaryDB.technical_stacks.any(
-                    TechnicalStackDB.name.in_(tech_stacks_list)
+            if "N/A" not in tech_stacks_list:
+                query = query.filter(
+                    SalaryDB.technical_stacks.any(
+                        TechnicalStackDB.name.in_(tech_stacks_list)
+                    )
                 )
-            )
-
+            else:
+                query = query.filter(
+                    SalaryDB.technical_stacks.any(
+                        TechnicalStackDB.name.in_(tech_stacks_list)
+                    )
+                    | ~SalaryDB.technical_stacks.any()
+                )
+        if verified:
+            verified_list = [v.strip().lower() for v in verified.split(",")]
+            if "n/a" not in verified_list:
+                query = query.filter(SalaryDB.verified.in_(verified_list))
+            else:
+                query = query.filter(
+                    SalaryDB.verified.in_(verified_list) | SalaryDB.verified.is_(None)
+                )
         # Apply sorting
         if sort_by in sort_field_mapping:
             sort_attr = sort_field_mapping[sort_by]
