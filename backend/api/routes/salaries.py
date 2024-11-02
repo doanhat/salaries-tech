@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional
 
 from fastapi import (
     APIRouter,
@@ -15,27 +15,15 @@ from pydantic import ValidationError
 from sqlalchemy import asc, delete, desc, func
 from sqlalchemy.orm import Session
 
-from ..config.env import EMAIL_VERIFICATION_SECRET_NAME, PROJECT_ID, RECAPTCHA_KEY
 from ..config.logger import logger
 from ..database import get_db_session
-from ..models import (
-    Company,
-    CompanyDB,
-    EmailBody,
-    EmailVerificationStatus,
-    Job,
-    JobDB,
-    Salary,
-    SalaryDB,
-    Tag,
-    TagDB,
-    TechnicalStack,
-    TechnicalStackDB,
-    salary_job,
-    salary_technical_stack,
-)
-from ..services.auth import create_assessment, get_hash_key
-from ..services.email import send_verification_email
+from ..models import EmailVerificationStatus, salary_job, salary_technical_stack
+from ..models.company import Company, CompanyDB, Tag, TagDB
+from ..models.job import Job, JobDB
+from ..models.salary import EmailBody, Salary, SalaryDB
+from ..models.technical_stack import TechnicalStack, TechnicalStackDB
+from ..services.email import get_email_hash_key, send_verification_email
+from ..services.recaptcha import verify_recaptcha
 
 router = APIRouter(prefix="/salaries", tags=["salaries"])
 
@@ -52,16 +40,9 @@ async def create_salary(
 ) -> Salary:
     try:
         # Verify reCAPTCHA
-        project_id = PROJECT_ID
-        recaptcha_key = RECAPTCHA_KEY
         user_ip = request.client.host if request.client else None
 
-        if not project_id or not recaptcha_key:
-            raise HTTPException(status_code=500, detail="reCAPTCHA configuration error")
-
-        assessment = create_assessment(
-            project_id, recaptcha_key, captcha_token, user_ip, user_agent
-        )
+        assessment = verify_recaptcha(captcha_token, user_ip, user_agent)
 
         if not assessment.token_properties.valid:
             raise HTTPException(status_code=400, detail="Invalid reCAPTCHA")
@@ -191,13 +172,15 @@ async def create_salary(
         return created_salary
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=e.errors())
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         db.rollback()
         logger.error(f"Error creating salary: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=Dict[str, Union[List[Salary], int]])
+@router.get("/", response_model=Dict[str, List[Salary] | int])
 async def get_salaries(
     db: Session = Depends(get_db_session),
     skip: int = 0,
@@ -458,34 +441,6 @@ async def delete_salaries(
         )
 
 
-@router.get("/stats/")
-async def get_salary_stats(
-    db: Session = Depends(get_db_session),
-) -> Dict[str, Union[Dict[str, float], List[Tuple[str, float]]]]:
-    try:
-        from sqlalchemy import func
-
-        avg_salary_by_city = (
-            db.query(
-                SalaryDB.location, func.avg(SalaryDB.gross_salary).label("avg_salary")
-            )
-            .group_by(SalaryDB.location)
-            .all()
-        )
-
-        avg_salary_dict = {
-            city: float(avg_salary) for city, avg_salary in avg_salary_by_city if city
-        }
-        top_10_cities = sorted(
-            avg_salary_dict.items(), key=lambda x: x[1], reverse=True
-        )[:10]
-
-        return {"avg_salary_by_city": avg_salary_dict, "top_10_cities": top_10_cities}
-    except Exception as e:
-        logger.error(f"Error in get_salary_stats: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.get("/check-location/")
 async def check_location(
     name: str, db: Session = Depends(get_db_session)
@@ -584,7 +539,7 @@ async def get_top_locations_by_salary(db: Session = Depends(get_db_session)):
 @router.get("/verify-email/")
 async def verify_email(token: str, db: Session = Depends(get_db_session)):
     try:
-        hash_key = get_hash_key(EMAIL_VERIFICATION_SECRET_NAME)
+        hash_key = get_email_hash_key()
         payload = jwt.decode(token, hash_key, algorithms=["HS256"])
         salary_id = payload.get("salary_id")
         email = payload.get("email")

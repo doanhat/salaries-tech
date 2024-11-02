@@ -1,6 +1,6 @@
 import pytest
 
-from backend.api.tools import capitalize_words
+from backend.api.tools.text import capitalize_words
 
 
 @pytest.mark.parametrize(

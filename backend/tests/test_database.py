@@ -1,5 +1,8 @@
 from backend.api.database import get_db
-from backend.api.models import CompanyDB, JobDB, SalaryDB, TechnicalStackDB
+from backend.api.models.company import CompanyDB
+from backend.api.models.job import JobDB
+from backend.api.models.salary import SalaryDB
+from backend.api.models.technical_stack import TechnicalStackDB
 
 
 def test_create_db_session(test_db_session):

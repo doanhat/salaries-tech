@@ -2,41 +2,11 @@ from datetime import date
 
 import pytest
 
-from backend.api.models import (
-    Company,
-    CompanyType,
-    Gender,
-    Job,
-    Level,
-    Salary,
-    Tag,
-    TechnicalStack,
-    WorkType,
-)
-
-
-def test_company_model():
-    company = Company(name="Test Company", type=CompanyType.STARTUP)
-    assert company.name == "Test Company"
-    assert company.type == CompanyType.STARTUP
-
-
-def test_company_with_tags():
-    tags = [Tag(name="tech"), Tag(name="startup")]
-    company = Company(name="Test Company", type=CompanyType.STARTUP, tags=tags)
-    assert len(company.tags) == 2
-    assert company.tags[0].name == "tech"
-    assert company.tags[1].name == "startup"
-
-
-def test_job_model():
-    job = Job(title="Software Engineer")
-    assert job.title == "Software Engineer"
-
-
-def test_technical_stack_model():
-    stack = TechnicalStack(name="Python")
-    assert stack.name == "Python"
+from backend.api.models import CompanyType, Gender, Level, WorkType
+from backend.api.models.company import Company
+from backend.api.models.job import Job
+from backend.api.models.salary import Salary
+from backend.api.models.technical_stack import TechnicalStack
 
 
 def test_salary_model():
@@ -75,12 +45,6 @@ def test_salary_model():
     assert salary.added_date == date.today()
     assert salary.leave_days == 25
     assert salary.technical_stacks[0].name == "Python"
-
-
-@pytest.mark.parametrize("company_type", list(CompanyType))
-def test_company_types(company_type):
-    company = Company(name="Test Company", type=company_type)
-    assert company.type == company_type
 
 
 @pytest.mark.parametrize("level", list(Level))

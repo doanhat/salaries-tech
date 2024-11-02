@@ -1,6 +1,8 @@
 import os
 import sys
 from datetime import date
+from typing import Any, Dict, Optional
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,7 +11,10 @@ from sqlalchemy.orm import close_all_sessions, sessionmaker
 
 from backend.api.database import Base, get_db_session
 from backend.api.main import app
-from backend.api.models import CompanyDB, JobDB, SalaryDB, TagDB, TechnicalStackDB
+from backend.api.models.company import CompanyDB, TagDB
+from backend.api.models.job import JobDB
+from backend.api.models.salary import SalaryDB
+from backend.api.models.technical_stack import TechnicalStackDB
 
 # Get the absolute path to the 'backend' directory
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -73,8 +78,32 @@ def reset_db(test_db, test_engine):
 
 
 # Client fixtures
+class AuthenticatedTestClient(TestClient):
+    """Custom TestClient that includes API key header in all requests"""
+
+    def request(
+        self,
+        method: str,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> TestClient:
+        """Override request method to include API key header"""
+        headers = headers or {}
+        headers.update({"X-API-Key": "test_api_key"})
+        return super().request(method, url, headers=headers, **kwargs)
+
+
 @pytest.fixture(scope="function")
 def client(override_get_db, reset_db):
+    app.dependency_overrides[get_db_session] = override_get_db
+    with AuthenticatedTestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def unauthenticated_client(override_get_db, reset_db):
     app.dependency_overrides[get_db_session] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -85,7 +114,7 @@ def client(override_get_db, reset_db):
 
 
 @pytest.fixture(scope="function")
-def sample_salary(test_db):
+def sample_data(test_db):
     # Create a tag
     tag = TagDB(name="tech")
     test_db.add(tag)
@@ -126,4 +155,40 @@ def sample_salary(test_db):
     test_db.add(salary)
     test_db.commit()
 
-    return salary
+    return {
+        "salary": salary,
+        "company": company,
+        "job": job,
+        "tag": tag,
+        "technical_stack": technical_stack,
+    }
+
+
+@pytest.fixture
+def mock_recaptcha():
+    """Fixture to create mock reCAPTCHA response"""
+
+    class MockAssessment:
+        class TokenProperties:
+            valid = True
+
+        class RiskAnalysis:
+            score = 0.9
+
+        token_properties = TokenProperties()
+        risk_analysis = RiskAnalysis()
+
+    return MockAssessment()
+
+
+@pytest.fixture
+def mock_send_verification_email():
+    with patch("backend.api.services.email.send_verification_email") as mock:
+        mock.return_value = True
+        yield mock
+
+
+@pytest.fixture
+def mock_background_tasks():
+    with patch("fastapi.BackgroundTasks.add_task") as mock:
+        yield mock

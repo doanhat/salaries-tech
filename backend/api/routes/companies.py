@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, func
@@ -6,7 +6,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db_session
-from ..models import Company, CompanyDB, Tag, TagDB, company_tag
+from ..models import company_tag
+from ..models.company import Company, CompanyDB, Tag, TagDB
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -48,10 +49,10 @@ async def create_company(
         )
 
 
-@router.get("/", response_model=Dict[str, Union[List[Company], int]])
+@router.get("/", response_model=Dict[str, List[Company] | int])
 async def get_companies(
     db: Session = Depends(get_db_session), limit: int = 50, skip: int = 0
-) -> Dict[str, Union[List[Company], int]]:
+) -> Dict[str, List[Company] | int]:
     results = db.query(CompanyDB).offset(skip).limit(limit).all()
     total = db.query(CompanyDB).count()
     companies = []

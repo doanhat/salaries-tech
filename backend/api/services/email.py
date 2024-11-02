@@ -8,10 +8,18 @@ from ..config.env import (
     ALLOWED_ORIGINS,
     EMAIL_VERIFICATION_SECRET_NAME,
     ENV,
+    PROJECT_ID,
     SENDGRID_API_KEY,
     SENDGRID_FROM_EMAIL,
 )
-from .auth import get_hash_key
+from ..config.logger import logger
+from ..tools.gcp.secrets import get_secret
+
+
+def get_email_hash_key() -> str | None:
+    if ENV == "prod":
+        return get_secret(PROJECT_ID, EMAIL_VERIFICATION_SECRET_NAME)
+    return EMAIL_VERIFICATION_SECRET_NAME
 
 
 async def send_verification_email(
@@ -31,7 +39,7 @@ async def send_verification_email(
             raise ValueError("SendGrid sender email is not configured")
 
         # Create verification token
-        hash_key = get_hash_key(EMAIL_VERIFICATION_SECRET_NAME)
+        hash_key = get_email_hash_key()
         if not hash_key:
             raise ValueError("Email verification secret is not configured")
 
@@ -96,8 +104,6 @@ async def send_verification_email(
         return True
 
     except Exception as e:
-        from ..config.logger import logger
-
         if ENV == "dev" and "401" in str(e):
             logger.warning(f"Warning sending verification email: {str(e)}")
         else:

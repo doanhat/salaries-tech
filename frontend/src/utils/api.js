@@ -13,18 +13,6 @@ const getHeaders = async () => {
   };
 };
 
-export const getSalaryStats = async () => {
-  const headers = await getHeaders();
-  const response = await fetch(`${API_BASE_URL}/salaries/stats/`, {
-    credentials: "include",
-    headers,
-  });
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return await response.json();
-};
-
 export const getChoices = async () => {
   try {
     const headers = await getHeaders();
