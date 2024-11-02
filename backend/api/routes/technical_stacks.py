@@ -39,7 +39,7 @@ async def get_technical_stacks(
     }
 
 
-@router.delete("/", response_model=None)
+@router.delete("/", response_model=Dict[str, str])
 async def delete_technical_stacks(
     stack_ids: List[int] = Query(...), db: Session = Depends(get_db_session)
 ) -> Dict[str, str]:
@@ -63,7 +63,7 @@ async def delete_technical_stacks(
     }
 
 
-@router.get("/check-name/")
+@router.get("/check-name/", response_model=Dict[str, bool])
 async def check_technical_stack(
     name: str, db: Session = Depends(get_db_session)
 ) -> Dict[str, bool]:

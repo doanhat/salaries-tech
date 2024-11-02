@@ -4,7 +4,7 @@ from ..config.env import API_KEY_SECRET_NAME, ENV, PROJECT_ID
 from ..tools.gcp.secrets import get_secret
 
 
-async def verify_api_key(request: Request):
+async def verify_api_key(request: Request) -> None:
     api_key = request.headers.get("X-API-Key")
     if not api_key:
         raise HTTPException(status_code=401, detail="API key is required")

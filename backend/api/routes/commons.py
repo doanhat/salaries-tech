@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -14,8 +16,10 @@ from ..tools.text import capitalize_words
 router = APIRouter(tags=["commons"])
 
 
-@router.get("/choices/")
-async def get_choices(db: Session = Depends(get_db_session)):
+@router.get("/choices/", response_model=Dict[str, List[str]])
+async def get_choices(
+    db: Session = Depends(get_db_session),
+) -> Dict[str, List[str]]:
     try:
         company_names = db.query(CompanyDB.name).distinct().all()
         company_tags = db.query(TagDB.name).distinct().all()

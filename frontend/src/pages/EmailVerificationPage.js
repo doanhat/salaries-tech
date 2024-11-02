@@ -2,27 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Alert, Container, Spinner } from "react-bootstrap";
 import { verifyEmail } from "../utils/api";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage, translations } from "../contexts/LanguageContext";
 
-const translations = {
-  fr: {
-    success: "Votre email a été vérifié avec succès !",
-    verifying: "Vérification de votre email...",
-    error:
-      "La vérification de l'email a échoué. Le lien peut être expiré ou invalide.",
-  },
-  en: {
-    success: "Your email has been verified successfully!",
-    verifying: "Verifying your email...",
-    error: "Failed to verify email. The link may be expired or invalid.",
-  },
-};
 const EmailVerificationPage = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const [status, setStatus] = useState("verifying");
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language].email_verification_page;
 
   useEffect(() => {
     const verify = async () => {

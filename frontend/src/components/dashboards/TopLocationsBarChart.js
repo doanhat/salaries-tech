@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import styled from "styled-components";
-import { useLanguage } from "../../contexts/LanguageContext";
+import { useLanguage, translations } from "../../contexts/LanguageContext";
 
 const ChartContainer = styled.div`
   width: 100%;
@@ -27,24 +27,9 @@ const StyledResponsiveContainer = styled(ResponsiveContainer)`
   }
 `;
 
-const translations = {
-  fr: {
-    title: "Top 10 des Localisations par Salaire Moyen",
-    tooltip: {
-      salary: "Salaire moyen",
-    },
-  },
-  en: {
-    title: "Top 10 Locations by Average Salary",
-    tooltip: {
-      salary: "Average salary",
-    },
-  },
-};
-
 const CustomTooltip = ({ active, payload, label }) => {
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language].dashboard.top_locations_bar_chart;
 
   if (active && payload && payload.length) {
     return (
@@ -65,7 +50,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const TopLocationsSalaryBarChart = ({ data }) => {
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language].dashboard.top_locations_bar_chart;
 
   return (
     <ChartContainer>

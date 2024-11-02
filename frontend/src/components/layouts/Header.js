@@ -3,39 +3,11 @@ import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
-import { useLanguage } from "../../contexts/LanguageContext";
+import { useLanguage, translations } from "../../contexts/LanguageContext";
 
 const Header = () => {
   const { language, toggleLanguage } = useLanguage();
-
-  const translations = {
-    fr: {
-      brand: "Salary Tech",
-      inspiredBy: "Inspiré par",
-      languages: {
-        current: "Français",
-        options: {
-          en: "Anglais",
-          fr: "Français",
-        },
-      },
-      github: "GitHub",
-    },
-    en: {
-      brand: "Salary Tech",
-      inspiredBy: "Inspired by",
-      languages: {
-        current: "English",
-        options: {
-          en: "English",
-          fr: "French",
-        },
-      },
-      github: "GitHub",
-    },
-  };
-
-  const t = translations[language];
+  const t = translations[language].header;
 
   return (
     <Navbar bg="light" expand="lg">
