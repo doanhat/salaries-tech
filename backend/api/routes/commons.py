@@ -28,20 +28,19 @@ async def get_choices(
         technical_stacks = db.query(TechnicalStackDB.name).distinct().all()
 
         return {
-            "company_names": sorted([c[0] for c in company_names if c[0]]),
-            "company_types": [capitalize_words(ct.value) for ct in CompanyType],
-            "company_tags": sorted(
-                [capitalize_words(d[0]) for d in company_tags if d[0]]
-            ),
-            "job_titles": sorted(
-                [capitalize_words(job[0]) for job in job_titles if job[0]]
-            ),
-            "locations": sorted([capitalize_words(l[0]) for l in locations if l[0]]),
-            "levels": [capitalize_words(l.value) for l in Level],
-            "work_types": [capitalize_words(wt.value) for wt in WorkType],
-            "technical_stacks": sorted(
-                [capitalize_words(ts[0]) for ts in technical_stacks if ts[0]]
-            ),
+            "company_names": ["N/A"] + sorted([c[0] for c in company_names if c[0]]),
+            "company_types": ["N/A"]
+            + [capitalize_words(ct.value) for ct in CompanyType],
+            "company_tags": ["N/A"]
+            + sorted([capitalize_words(d[0]) for d in company_tags if d[0]]),
+            "job_titles": ["N/A"]
+            + sorted([capitalize_words(job[0]) for job in job_titles if job[0]]),
+            "locations": ["N/A"]
+            + sorted([capitalize_words(l[0]) for l in locations if l[0]]),
+            "levels": ["N/A"] + [capitalize_words(l.value) for l in Level],
+            "work_types": ["N/A"] + [capitalize_words(wt.value) for wt in WorkType],
+            "technical_stacks": ["N/A"]
+            + sorted([capitalize_words(ts[0]) for ts in technical_stacks if ts[0]]),
         }
     except SQLAlchemyError as e:
         logger.error(f"Database error when fetching choices: {str(e)}")
