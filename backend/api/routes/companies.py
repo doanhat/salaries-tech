@@ -68,7 +68,7 @@ async def get_companies(
     return {"results": companies, "total": total}
 
 
-@router.delete("/", response_model=dict)
+@router.delete("/", response_model=Dict[str, str])
 async def delete_companies(
     company_ids: List[int] = Query(...), db: Session = Depends(get_db_session)
 ) -> Dict[str, str]:
@@ -94,7 +94,7 @@ async def delete_companies(
     }
 
 
-@router.get("/check-name/")
+@router.get("/check-name/", response_model=Dict[str, bool])
 async def check_company_name(
     name: str, db: Session = Depends(get_db_session)
 ) -> Dict[str, bool]:
@@ -102,7 +102,7 @@ async def check_company_name(
     return {"exists": company is not None}
 
 
-@router.get("/check-tag/")
+@router.get("/check-tag/", response_model=Dict[str, bool])
 async def check_company_tag(
     name: str, db: Session = Depends(get_db_session)
 ) -> Dict[str, bool]:

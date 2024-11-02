@@ -22,14 +22,14 @@ import {
   getLocationStats,
   getTopLocationsByAverageSalary,
 } from "../utils/api";
-import AddSalaryForm from "../components/salary/AddSalaryForm";
-import LocationPieChart from "../components/dashboard/LocationsPieChart";
-import TopLocationsSalaryBarChart from "../components/dashboard/TopLocationsBarChart";
+import AddSalaryForm from "../components/forms/AddSalaryForm";
+import LocationPieChart from "../components/dashboards/LocationsPieChart";
+import TopLocationsSalaryBarChart from "../components/dashboards/TopLocationsBarChart";
 import { debounce } from "lodash";
 import { capitalizeWords } from "../utils/stringUtils";
 import { useMediaQuery } from "react-responsive";
 import styled from "styled-components";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage, translations } from "../contexts/LanguageContext";
 import "react-datepicker/dist/react-datepicker.css";
 
 // Add these styled components
@@ -93,213 +93,6 @@ const ButtonContainer = styled(Container)`
   margin-top: 20px;
   margin-bottom: 20px;
 `;
-
-const translations = {
-  fr: {
-    table: {
-      company: "Entreprise",
-      location: "Localisation",
-      job_title: "Poste",
-      gross_salary: "Salaire Brut",
-      net_salary: "Salaire Net",
-      bonus: "Variables",
-      level: "Niveau",
-      work_type: "Type de contrat",
-      experience_years_company: "Exp Entreprise",
-      total_experience_years: "Exp Totale",
-      company_type: "Type d'entreprise",
-      technical_stacks: "Stacks techniques",
-      tags: "Tags",
-      gender: "Genre",
-      gender_value: {
-        male: "Homme",
-        female: "Femme",
-        other: "Autre",
-      },
-      added_date: "Date d'ajout",
-      leave_days: "Jours de congé",
-      actions: {
-        name: "Actions",
-        title: "Détails",
-      },
-      verified: "Vérifié",
-      verification_value: {
-        no: "Non vérifié",
-        pending: "En attente",
-        verified: "Vérifié",
-      },
-    },
-    filters: {
-      title: "Filtres",
-      companies: "Entreprises",
-      tags: "Tags",
-      company_types: "Types d'entreprises",
-      job_titles: "Postes",
-      locations: "Localisations",
-      genders: "Genres",
-      gender_value: {
-        male: "Homme",
-        female: "Femme",
-        other: "Autre",
-      },
-      levels: "Niveaux",
-      work_types: "Types de contrat",
-      net_salary_min: "Salaire Net Min",
-      net_salary_max: "Salaire Net Max",
-      gross_salary_min: "Salaire Brut Min",
-      gross_salary_max: "Salaire Brut Max",
-      bonus_min: "Variables Min",
-      bonus_max: "Variables Max",
-      experience_years_company_min: "Exp Entreprise Min",
-      experience_years_company_max: "Exp Entreprise Max",
-      total_experience_years_min: "Exp Totale Min",
-      total_experience_years_max: "Exp Totale Max",
-      leave_days_min: "Jours de congé Min",
-      leave_days_max: "Jours de congé Max",
-      added_date_min: "Date d'ajout Min",
-      added_date_max: "Date d'ajout Max",
-      technical_stacks: "Stacks techniques",
-      verifications: "Vérifications",
-      verification_value: {
-        no: "Non vérifié",
-        pending: "En attente",
-        verified: "Vérifié",
-      },
-    },
-    buttons: {
-      add_salary: "Ajouter un salaire",
-      filters: "Filtres",
-      apply_filters: "Appliquer les filtres",
-      reset_filters: "Réinitialiser les filtres",
-      show_charts: {
-        on: "Afficher les graphiques",
-        off: "Masquer les graphiques",
-      },
-      show_results: "Afficher",
-      close: "Fermer",
-    },
-    errors: {
-      no_salaries: "Aucun salaire trouvé.",
-      add: "Erreur lors de l'ajout du salaire. Veuillez réessayer.",
-    },
-    info: {
-      no_filters_applied: "Aucun filtre appliqué.",
-      loading: "Chargement des données...",
-      add_salary_success: "Salaire ajouté avec succès !",
-      add_salary_success_email:
-        "Salaire ajouté avec succès ! Veuillez vérifier votre email pour la vérification. Il peut prendre quelques heures pour arriver. (J'utilise un plan gratuit donc ça peut être lent :( )",
-    },
-    email_body: {
-      subject: "Vérifier votre soumission de salaire",
-      greeting_text:
-        "Merci pour votre soumission de salaire. Veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous:",
-      verify_button_text: "Vérifier mon email",
-      expiration_text: "Ce lien de vérification expirera dans 7 jours.",
-    },
-  },
-  en: {
-    table: {
-      company: "Company",
-      location: "Location",
-      job_title: "Job Title",
-      gross_salary: "Gross Salary",
-      net_salary: "Net Salary",
-      bonus: "Bonus",
-      level: "Level",
-      work_type: "Work Type",
-      experience_years_company: "Company Exp",
-      total_experience_years: "Total Exp",
-      company_type: "Company Type",
-      technical_stacks: "Technical Stacks",
-      tags: "Tags",
-      gender: "Gender",
-      gender_value: {
-        male: "Male",
-        female: "Female",
-        other: "Other",
-      },
-      added_date: "Added Date",
-      leave_days: "Leave Days",
-      actions: {
-        name: "Actions",
-        title: "Details",
-      },
-      verified: "Verified",
-      verification_value: {
-        no: "Not Verified",
-        pending: "Pending",
-        verified: "Verified",
-      },
-    },
-    filters: {
-      title: "Filters",
-      companies: "Companies",
-      tags: "Tags",
-      company_types: "Company Types",
-      job_titles: "Job Titles",
-      locations: "Locations",
-      genders: "Genders",
-      gender_value: {
-        male: "Male",
-        female: "Female",
-        other: "Other",
-      },
-      levels: "Levels",
-      work_types: "Work Types",
-      net_salary_min: "Net Salary Min",
-      net_salary_max: "Net Salary Max",
-      gross_salary_min: "Gross Salary Min",
-      gross_salary_max: "Gross Salary Max",
-      bonus_min: "Bonus Min",
-      bonus_max: "Bonus Max",
-      experience_years_company_min: "Company Exp Min",
-      experience_years_company_max: "Company Exp Max",
-      total_experience_years_min: "Total Exp Min",
-      total_experience_years_max: "Total Exp Max",
-      leave_days_min: "Leave Days Min",
-      leave_days_max: "Leave Days Max",
-      added_date_min: "Added Date Min",
-      added_date_max: "Added Date Max",
-      technical_stacks: "Technical Stacks",
-      verifications: "Verifications",
-      verification_value: {
-        no: "Not Verified",
-        pending: "Pending",
-        verified: "Verified",
-      },
-    },
-    buttons: {
-      add_salary: "Add a Salary",
-      filters: "Filters",
-      apply_filters: "Apply Filters",
-      reset_filters: "Reset Filters",
-      show_charts: {
-        on: "Show Charts",
-        off: "Hide Charts",
-      },
-      show_results: "Show",
-      close: "Close",
-    },
-    errors: {
-      no_salaries: "No salaries found.",
-      add: "Error adding salary. Please try again.",
-    },
-    info: {
-      no_filters_applied: "No filters applied.",
-      loading: "Loading data...",
-      add_salary_success: "Salary added successfully!",
-      add_salary_success_email:
-        "Salary added successfully! Please check your email for verification. It can take a few hours to arrive. (I'm using a free plan so it might be slow :( )",
-    },
-    email_body: {
-      subject: "Verify your salary submission",
-      greeting_text:
-        "Thank you for submitting your salary information. Please verify your email address by clicking the button below:",
-      verify_button_text: "Verify my email",
-      expiration_text: "This verification link will expire in 7 days.",
-    },
-  },
-};
 
 const SalaryListPage = () => {
   const { language } = useLanguage();
@@ -479,10 +272,10 @@ const SalaryListPage = () => {
     try {
       const userAgent = navigator.userAgent;
       const emailBody = {
-        subject: t.email_body.subject,
-        greeting_text: t.email_body.greeting_text,
-        verify_button_text: t.email_body.verify_button_text,
-        expiration_text: t.email_body.expiration_text,
+        subject: t.entities.email_body.subject,
+        greeting_text: t.entities.email_body.greeting_text,
+        verify_button_text: t.entities.email_body.verify_button_text,
+        expiration_text: t.entities.email_body.expiration_text,
       };
       const response = await addSalary(
         newSalary,
@@ -493,14 +286,14 @@ const SalaryListPage = () => {
       console.log("Salary added successfully:", response);
       setSuccessMessage(
         newSalary.professional_email
-          ? t.info.add_salary_success_email
-          : t.info.add_salary_success,
+          ? t.entities.info.add_salary_success_email
+          : t.entities.info.add_salary_success,
       );
       setShowAddSalaryModal(false);
       fetchSalaries(); // Refresh the salary list
     } catch (error) {
       console.error("Error adding salary:", error);
-      let errorMessage = t.errors.add;
+      let errorMessage = t.entities.errors.submit;
       if (error.message) {
         try {
           const parsedError = JSON.parse(error.message);
@@ -700,12 +493,6 @@ const SalaryListPage = () => {
     fetchSalaries(initialFilters);
   };
 
-  const genderOptions = [
-    { value: "male", label: "Male" },
-    { value: "female", label: "Female" },
-    { value: "other", label: "Other" },
-  ];
-
   const handleSort = (column) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -845,18 +632,18 @@ const SalaryListPage = () => {
         </TableCell>
         <td>
           {salary.verified === "no" && (
-            <span className="text-muted">{t.table.verification_value.no}</span>
+            <span className="text-muted">{t.entities.verified.value.no}</span>
           )}
           {salary.verified === "pending" && (
             <span className="text-warning">
               <i className="bi bi-clock"></i>{" "}
-              {t.table.verification_value.pending}
+              {t.entities.verified.value.pending}
             </span>
           )}
           {salary.verified === "verified" && (
             <span className="text-success">
               <i className="bi bi-check-circle"></i>{" "}
-              {t.table.verification_value.verified}
+              {t.entities.verified.value.verified}
             </span>
           )}
         </td>
@@ -866,7 +653,7 @@ const SalaryListPage = () => {
             size="sm"
             onClick={() => handleShowDetails(salary)}
           >
-            {t.table.actions.title}
+            {t.entities.actions.title}
           </Button>
         </StickyCell>
       </tr>
@@ -902,7 +689,9 @@ const SalaryListPage = () => {
         variant="outline-primary"
         onClick={() => setShowCharts(!showCharts)}
       >
-        {showCharts ? t.buttons.show_charts.off : t.buttons.show_charts.on}
+        {showCharts
+          ? t.entities.buttons.show_charts.off
+          : t.entities.buttons.show_charts.on}
       </ToggleButton>
 
       {/* Charts */}
@@ -924,18 +713,18 @@ const SalaryListPage = () => {
         <Row className="gy-2 justify-content-start align-items-center">
           <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <Button variant="primary" onClick={handleOpenAddSalaryModal}>
-              {t.buttons.add_salary}
+              {t.entities.buttons.add_salary}
             </Button>
           </Col>
           <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <Button variant="primary" onClick={() => setShowFilterModal(true)}>
-              {t.buttons.filters}
+              {t.entities.buttons.filters}
             </Button>
           </Col>
           <Col xs="auto" className="mb-2 mb-sm-0 ms-sm-0">
             <Dropdown as={ButtonGroup}>
               <Button variant="primary">
-                {t.buttons.show_results}: {itemsPerPage}
+                {t.entities.buttons.show_results}: {itemsPerPage}
               </Button>
               <Dropdown.Toggle
                 split
@@ -984,7 +773,7 @@ const SalaryListPage = () => {
         contentClassName="h-100"
       >
         <Modal.Header closeButton>
-          <Modal.Title>{t.filters.title}</Modal.Title>
+          <Modal.Title>{t.entities.title.filters}</Modal.Title>
         </Modal.Header>
         <Modal.Body
           style={{ ...fullScreenModalStyle.modalContent, overflowY: "auto" }}
@@ -995,8 +784,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.company_names)}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.companies}
-                  title={t.filters.companies}
+                  placeholder={t.entities.company.name.plural}
+                  title={t.entities.company.name.plural}
                   value={pendingFilters.company_names || []}
                   name="company_names"
                 />
@@ -1005,8 +794,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.company_tags || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.tags}
-                  title={t.filters.tags}
+                  placeholder={t.entities.company.tags.plural}
+                  title={t.entities.company.tags.plural}
                   value={pendingFilters.company_tags || []}
                   name="company_tags"
                 />
@@ -1015,8 +804,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.company_types || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.company_types}
-                  title={t.filters.company_types}
+                  placeholder={t.entities.company.type.plural}
+                  title={t.entities.company.type.plural}
                   value={pendingFilters.company_types || []}
                   name="company_types"
                 />
@@ -1025,8 +814,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.job_titles || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.job_titles}
-                  title={t.filters.job_titles}
+                  placeholder={t.entities.job.titles.plural}
+                  title={t.entities.job.titles.plural}
                   value={pendingFilters.job_titles || []}
                   name="job_titles"
                 />
@@ -1035,8 +824,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.technical_stacks || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.technical_stacks}
-                  title={t.filters.technical_stacks}
+                  placeholder={t.entities.technical_stacks.plural}
+                  title={t.entities.technical_stacks.plural}
                   value={pendingFilters.technical_stacks || []}
                   name="technical_stacks"
                   isMulti
@@ -1046,8 +835,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.locations || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.locations}
-                  title={t.filters.locations}
+                  placeholder={t.entities.location.plural}
+                  title={t.entities.location.plural}
                   value={pendingFilters.locations || []}
                   name="locations"
                   isCreatable={true} // Allow creating new options
@@ -1064,13 +853,13 @@ const SalaryListPage = () => {
               <Col md={4}>
                 <SelectWithTooltip
                   options={[
-                    { value: "male", label: t.filters.gender_value.male },
-                    { value: "female", label: t.filters.gender_value.female },
-                    { value: "other", label: t.filters.gender_value.other },
+                    { value: "male", label: t.entities.gender.value.male },
+                    { value: "female", label: t.entities.gender.value.female },
+                    { value: "other", label: t.entities.gender.value.other },
                   ]}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.genders}
-                  title={t.filters.genders}
+                  placeholder={t.entities.gender.plural}
+                  title={t.entities.gender.plural}
                   value={pendingFilters.genders}
                   name="genders"
                 />
@@ -1079,8 +868,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.levels || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.levels}
-                  title={t.filters.levels}
+                  placeholder={t.entities.level.plural}
+                  title={t.entities.level.plural}
                   value={pendingFilters.levels || []}
                   name="levels"
                 />
@@ -1089,8 +878,8 @@ const SalaryListPage = () => {
                 <SelectWithTooltip
                   options={createOptions(choices.work_types || [])}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.work_types}
-                  title={t.filters.work_types}
+                  placeholder={t.entities.work_type.plural}
+                  title={t.entities.work_type.plural}
                   value={pendingFilters.work_types || []}
                   name="work_types"
                 />
@@ -1098,120 +887,120 @@ const SalaryListPage = () => {
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.net_salary_min}
+                  placeholder={t.entities.net_salary.min}
                   name="net_salary_min"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.net_salary_min}
+                  title={t.entities.net_salary.min}
                   value={pendingFilters.net_salary_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.net_salary_max}
+                  placeholder={t.entities.net_salary.max}
                   name="net_salary_max"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.net_salary_max}
+                  title={t.entities.net_salary.max}
                   value={pendingFilters.net_salary_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.gross_salary_min}
+                  placeholder={t.entities.gross_salary.min}
                   name="gross_salary_min"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.gross_salary_min}
+                  title={t.entities.gross_salary.min}
                   value={pendingFilters.gross_salary_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.gross_salary_max}
+                  placeholder={t.entities.gross_salary.max}
                   name="gross_salary_max"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.gross_salary_max}
+                  title={t.entities.gross_salary.max}
                   value={pendingFilters.gross_salary_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.bonus_min}
+                  placeholder={t.entities.bonus.min}
                   name="bonus_min"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.bonus_min}
+                  title={t.entities.bonus.min}
                   value={pendingFilters.bonus_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.bonus_max}
+                  placeholder={t.entities.bonus.max}
                   name="bonus_max"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.bonus_max}
+                  title={t.entities.bonus.max}
                   value={pendingFilters.bonus_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.experience_years_company_min}
+                  placeholder={t.entities.experience_years_company.min}
                   name="experience_years_company_min"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.experience_years_company_min}
+                  title={t.entities.experience_years_company.min}
                   value={pendingFilters.experience_years_company_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.experience_years_company_max}
+                  placeholder={t.entities.experience_years_company.max}
                   name="experience_years_company_max"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.experience_years_company_max}
+                  title={t.entities.experience_years_company.max}
                   value={pendingFilters.experience_years_company_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.total_experience_years_min}
+                  placeholder={t.entities.total_experience_years.min}
                   name="total_experience_years_min"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.total_experience_years_min}
+                  title={t.entities.total_experience_years.min}
                   value={pendingFilters.total_experience_years_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.total_experience_years_max}
+                  placeholder={t.entities.total_experience_years.max}
                   name="total_experience_years_max"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.total_experience_years_max}
+                  title={t.entities.total_experience_years.max}
                   value={pendingFilters.total_experience_years_max}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.leave_days_min}
+                  placeholder={t.entities.leave_days.min}
                   name="leave_days_min"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.leave_days_min}
+                  title={t.entities.leave_days.min}
                   value={pendingFilters.leave_days_min}
                 />
               </Col>
               <Col md={4}>
                 <InputWithTooltip
                   type="number"
-                  placeholder={t.filters.leave_days_max}
+                  placeholder={t.entities.leave_days.max}
                   name="leave_days_max"
                   onChange={handleInputChangeImmediate}
-                  title={t.filters.leave_days_max}
+                  title={t.entities.leave_days.max}
                   value={pendingFilters.leave_days_max}
                 />
               </Col>
@@ -1220,7 +1009,7 @@ const SalaryListPage = () => {
                   name="min_added_date"
                   selected={dateFilters.min_added_date}
                   onChange={(date) => handleDateChange(date, "min_added_date")}
-                  title={t.filters.added_date_min}
+                  title={t.entities.added_date.min}
                 />
               </Col>
               <Col md={4}>
@@ -1228,25 +1017,25 @@ const SalaryListPage = () => {
                   name="max_added_date"
                   selected={dateFilters.max_added_date}
                   onChange={(date) => handleDateChange(date, "max_added_date")}
-                  title={t.filters.added_date_max}
+                  title={t.entities.added_date.max}
                 />
               </Col>
               <Col md={4}>
                 <SelectWithTooltip
                   options={[
-                    { value: "no", label: t.filters.verification_value.no },
+                    { value: "no", label: t.entities.verified.value.no },
                     {
                       value: "pending",
-                      label: t.filters.verification_value.pending,
+                      label: t.entities.verified.value.pending,
                     },
                     {
                       value: "verified",
-                      label: t.filters.verification_value.verified,
+                      label: t.entities.verified.value.verified,
                     },
                   ]}
                   onChange={handleMultiSelectChange}
-                  placeholder={t.filters.verifications}
-                  title={t.filters.verifications}
+                  placeholder={t.entities.verified.plural}
+                  title={t.entities.verified.plural}
                   value={pendingFilters.verifications || []}
                   name="verifications"
                 />
@@ -1259,17 +1048,17 @@ const SalaryListPage = () => {
                   onClick={() => setShowFilterModal(false)}
                   data-testid="close-filter-modal"
                 >
-                  {t.buttons.close}
+                  {t.entities.buttons.close}
                 </Button>
                 <Button variant="primary" type="submit" className="ms-2">
-                  {t.buttons.apply_filters}
+                  {t.entities.buttons.apply_filters}
                 </Button>
                 <Button
                   variant="outline-secondary"
                   onClick={resetFilters}
                   className="ms-2"
                 >
-                  {t.buttons.reset_filters}
+                  {t.entities.buttons.reset_filters}
                 </Button>
               </Col>
             </Row>
@@ -1280,7 +1069,9 @@ const SalaryListPage = () => {
       {isLoading && (
         <LoadingOverlay>
           <div className="spinner-border" role="status">
-            <span className="visually-hidden">{t.info.loading} ...</span>
+            <span className="visually-hidden">
+              {t.entities.info.loading} ...
+            </span>
           </div>
         </LoadingOverlay>
       )}
@@ -1290,35 +1081,50 @@ const SalaryListPage = () => {
           <thead>
             <tr>
               <StickyCell as="th" left="0">
-                {t.table.company}
+                {t.entities.company.name.singular}
               </StickyCell>
-              <SortableHeader column="location" label={t.table.location} />
-              <th>{t.table.job_title}</th>
+              <SortableHeader
+                column="location"
+                label={t.entities.location.singular}
+              />
+              <th>{t.entities.job.titles.singular}</th>
               <SortableHeader
                 column="gross_salary"
-                label={t.table.gross_salary}
+                label={t.entities.gross_salary.singular}
               />
-              <SortableHeader column="net_salary" label={t.table.net_salary} />
-              <SortableHeader column="bonus" label={t.table.bonus} />
-              <th>{t.table.level}</th>
-              <th>{t.table.work_type}</th>
+              <SortableHeader
+                column="net_salary"
+                label={t.entities.net_salary.singular}
+              />
+              <SortableHeader
+                column="bonus"
+                label={t.entities.bonus.singular}
+              />
+              <th>{t.entities.level.singular}</th>
+              <th>{t.entities.work_type.singular}</th>
               <SortableHeader
                 column="experience_years_company"
-                label={t.table.experience_years_company}
+                label={t.entities.experience_years_company.singular}
               />
               <SortableHeader
                 column="total_experience_years"
-                label={t.table.total_experience_years}
+                label={t.entities.total_experience_years.singular}
               />
-              <th>{t.table.company_type}</th>
-              <th>{t.table.technical_stacks}</th>
-              <th>{t.table.tags}</th>
-              <th>{t.table.gender}</th>
-              <SortableHeader column="added_date" label={t.table.added_date} />
-              <SortableHeader column="leave_days" label={t.table.leave_days} />
-              <th>{t.table.verified}</th>
+              <th>{t.entities.company.type.singular}</th>
+              <th>{t.entities.technical_stacks.singular}</th>
+              <th>{t.entities.company.tags.singular}</th>
+              <th>{t.entities.gender.singular}</th>
+              <SortableHeader
+                column="added_date"
+                label={t.entities.added_date.singular}
+              />
+              <SortableHeader
+                column="leave_days"
+                label={t.entities.leave_days.singular}
+              />
+              <th>{t.entities.verified.singular}</th>
               <StickyCell as="th" right="0">
-                {t.table.actions.name}
+                {t.entities.actions.name}
               </StickyCell>
             </tr>
           </thead>
@@ -1331,7 +1137,7 @@ const SalaryListPage = () => {
               salaries.map(renderSalaryRow)
             ) : (
               <tr>
-                <td colSpan="17">{t.errors.no_salaries}</td>
+                <td colSpan="17">{t.entities.errors.no_salaries}</td>
               </tr>
             )}
           </tbody>
@@ -1340,87 +1146,87 @@ const SalaryListPage = () => {
 
       <Modal show={showDetailsModal} onHide={handleCloseDetails}>
         <Modal.Header closeButton>
-          <Modal.Title>{t.table.actions.title}</Modal.Title>
+          <Modal.Title>{t.entities.actions.title}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedSalary && (
             <div>
               <p>
-                <strong>{t.table.company}:</strong>{" "}
+                <strong>{t.entities.company.name.singular}:</strong>{" "}
                 {selectedSalary.company?.name || "N/A"}
               </p>
               <p>
-                <strong>{t.table.tags}:</strong>{" "}
+                <strong>{t.entities.company.tags.singular}:</strong>{" "}
                 {selectedSalary.company?.tags
                   ?.map((tag) => capitalizeWords(tag.name))
                   .join(", ") || "N/A"}
               </p>
               <p>
-                <strong>{t.table.company_type}:</strong>{" "}
+                <strong>{t.entities.company.type.singular}:</strong>{" "}
                 {capitalizeWords(selectedSalary.company?.type) || "N/A"}
               </p>
               <p>
-                <strong>{t.table.job_title}:</strong>{" "}
+                <strong>{t.entities.job.titles.singular}:</strong>{" "}
                 {selectedSalary.jobs
                   ?.map((job) => capitalizeWords(job.title))
                   .join(", ") || "N/A"}
               </p>
               <p>
-                <strong>{t.table.technical_stacks}:</strong>{" "}
+                <strong>{t.entities.technical_stacks.singular}:</strong>{" "}
                 {selectedSalary.technical_stacks
                   ?.map((stack) => capitalizeWords(stack.name))
                   .join(", ") || "N/A"}
               </p>
               <p>
-                <strong>{t.table.location}:</strong>{" "}
+                <strong>{t.entities.location.singular}:</strong>{" "}
                 {capitalizeWords(selectedSalary.location) || "N/A"}
               </p>
               <p>
-                <strong>{t.table.net_salary}:</strong>{" "}
+                <strong>{t.entities.net_salary.singular}:</strong>{" "}
                 {selectedSalary.net_salary !== null
                   ? selectedSalary.net_salary
                   : "N/A"}
               </p>
               <p>
-                <strong>{t.table.gross_salary}:</strong>{" "}
+                <strong>{t.entities.gross_salary.singular}:</strong>{" "}
                 {selectedSalary.gross_salary !== null
                   ? selectedSalary.gross_salary
                   : "N/A"}
               </p>
               <p>
-                <strong>{t.table.bonus}:</strong>{" "}
+                <strong>{t.entities.bonus.singular}:</strong>{" "}
                 {selectedSalary.bonus !== null ? selectedSalary.bonus : "N/A"}
               </p>
               <p>
-                <strong>{t.table.gender}:</strong>{" "}
+                <strong>{t.entities.gender.singular}:</strong>{" "}
                 {capitalizeWords(selectedSalary.gender) || "N/A"}
               </p>
               <p>
-                <strong>{t.table.experience_years_company}:</strong>{" "}
+                <strong>{t.entities.experience_years_company.singular}:</strong>{" "}
                 {selectedSalary.experience_years_company !== null
                   ? selectedSalary.experience_years_company
                   : "N/A"}
               </p>
               <p>
-                <strong>{t.table.total_experience_years}:</strong>{" "}
+                <strong>{t.entities.total_experience_years.singular}:</strong>{" "}
                 {selectedSalary.total_experience_years !== null
                   ? selectedSalary.total_experience_years
                   : "N/A"}
               </p>
               <p>
-                <strong>{t.table.level}:</strong>{" "}
+                <strong>{t.entities.level.singular}:</strong>{" "}
                 {capitalizeWords(selectedSalary.level) || "N/A"}
               </p>
               <p>
-                <strong>{t.table.work_type}:</strong>{" "}
+                <strong>{t.entities.work_type.singular}:</strong>{" "}
                 {capitalizeWords(selectedSalary.work_type) || "N/A"}
               </p>
               <p>
-                <strong>{t.table.added_date}:</strong>{" "}
+                <strong>{t.entities.added_date.singular}:</strong>{" "}
                 {selectedSalary.added_date || "N/A"}
               </p>
               <p>
-                <strong>{t.table.leave_days}:</strong>{" "}
+                <strong>{t.entities.leave_days.singular}:</strong>{" "}
                 {selectedSalary.leave_days !== null
                   ? selectedSalary.leave_days
                   : "N/A"}
@@ -1430,7 +1236,7 @@ const SalaryListPage = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseDetails}>
-            {t.buttons.close}
+            {t.entities.buttons.close}
           </Button>
         </Modal.Footer>
       </Modal>

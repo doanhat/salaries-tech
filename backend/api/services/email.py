@@ -29,7 +29,7 @@ async def send_verification_email(
     greeting_text: str,
     verify_button_text: str,
     expiration_text: str,
-):
+) -> bool:
     """Send verification email using SendGrid."""
     try:
         # Validate SendGrid configuration

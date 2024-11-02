@@ -12,6 +12,7 @@ from fastapi import (
 )
 from jose import jwt
 from pydantic import ValidationError
+from pyparsing import Any
 from sqlalchemy import asc, delete, desc, func
 from sqlalchemy.orm import Session
 
@@ -224,7 +225,7 @@ async def get_salaries(
     technical_stacks: Optional[str] = Query(
         None, description="Comma-separated list of technical stacks"
     ),
-):
+) -> Dict[str, List[Salary] | int]:
     try:
         sort_field_mapping = {
             "company_name": CompanyDB.name,
@@ -394,7 +395,7 @@ async def get_salaries(
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
-@router.delete("/", response_model=dict)
+@router.delete("/", response_model=Dict[str, str])
 async def delete_salaries(
     salary_ids: List[int] = Query(...), db: Session = Depends(get_db_session)
 ) -> Dict[str, str]:
@@ -441,7 +442,7 @@ async def delete_salaries(
         )
 
 
-@router.get("/check-location/")
+@router.get("/check-location/", response_model=Dict[str, bool])
 async def check_location(
     name: str, db: Session = Depends(get_db_session)
 ) -> Dict[str, bool]:
@@ -451,8 +452,10 @@ async def check_location(
     return {"exists": location is not None}
 
 
-@router.get("/location-stats/")
-async def get_location_stats(db: Session = Depends(get_db_session)):
+@router.get("/location-stats/", response_model=Dict[str, List[Dict[str, Any]]])
+async def get_location_stats(
+    db: Session = Depends(get_db_session),
+) -> Dict[str, List[Dict[str, Any]]]:
     try:
         total_salaries = db.query(SalaryDB).count()
         # Get all locations and their counts
@@ -501,8 +504,10 @@ async def get_location_stats(db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/top-locations-by-salary/")
-async def get_top_locations_by_salary(db: Session = Depends(get_db_session)):
+@router.get("/top-locations-by-salary/", response_model=List[Dict[str, Any]])
+async def get_top_locations_by_salary(
+    db: Session = Depends(get_db_session),
+) -> List[Dict[str, Any]]:
     try:
         # Query to get top 10 locations by average salary
         top_locations = (
@@ -536,8 +541,10 @@ async def get_top_locations_by_salary(db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/verify-email/")
-async def verify_email(token: str, db: Session = Depends(get_db_session)):
+@router.get("/verify-email/", response_model=Dict[str, str])
+async def verify_email(
+    token: str, db: Session = Depends(get_db_session)
+) -> Dict[str, str]:
     try:
         hash_key = get_email_hash_key()
         payload = jwt.decode(token, hash_key, algorithms=["HS256"])

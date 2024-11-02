@@ -34,7 +34,7 @@ async def get_jobs(
     }
 
 
-@router.delete("/", response_model=None)
+@router.delete("/", response_model=Dict[str, str])
 async def delete_jobs(
     job_ids: List[int] = Query(...), db: Session = Depends(get_db_session)
 ) -> Dict[str, str]:
@@ -58,7 +58,7 @@ async def delete_jobs(
     return {"message": f"Jobs with IDs {job_ids} have been deleted successfully"}
 
 
-@router.get("/check-title/")
+@router.get("/check-title/", response_model=Dict[str, bool])
 async def check_job_title(
     title: str, db: Session = Depends(get_db_session)
 ) -> Dict[str, bool]:

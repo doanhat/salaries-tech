@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Header from "./components/layout/Header";
-import Footer from "./components/layout/Footer";
+import Header from "./components/layouts/Header";
+import Footer from "./components/layouts/Footer";
 import SalaryListPage from "./pages/SalaryListPage";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
 import "bootstrap/dist/css/bootstrap.min.css";
