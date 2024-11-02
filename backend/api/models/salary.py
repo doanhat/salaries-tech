@@ -2,7 +2,7 @@ from datetime import date
 from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String
+from sqlalchemy import CheckConstraint, Column, Date, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -43,6 +43,20 @@ class SalaryDB(Base):
     email_domain = Column(String, nullable=True)
     verified = Column(String, default=EmailVerificationStatus.NO.value)
 
+    __table_args__ = (
+        CheckConstraint("net_salary >= 0", name="check_net_salary_non_negative"),
+        CheckConstraint(
+            "experience_years_company >= 0",
+            name="check_experience_years_company_non_negative",
+        ),
+        CheckConstraint(
+            "total_experience_years >= 0",
+            name="check_total_experience_years_non_negative",
+        ),
+        CheckConstraint("leave_days >= 0", name="check_leave_days_non_negative"),
+        CheckConstraint("leave_days < 365", name="check_leave_days_max"),
+    )
+
 
 # Pydantic model
 class Salary(BaseModel):
@@ -50,21 +64,39 @@ class Salary(BaseModel):
     company: Optional[Company] = None
     jobs: Optional[List[Job]] = []
     location: str
-    net_salary: Optional[float] = None
-    gross_salary: float
-    bonus: Optional[float] = None
+    net_salary: Optional[float] = Field(None, ge=0)
+    gross_salary: float = Field(..., ge=0)
+    bonus: Optional[float] = Field(None, ge=0)
     gender: Optional[Gender] = None
-    experience_years_company: Optional[int] = None
-    total_experience_years: Optional[int] = None
+    experience_years_company: Optional[int] = Field(None, ge=0)
+    total_experience_years: Optional[int] = Field(None, ge=0)
     level: Optional[Level] = None
     work_type: Optional[WorkType] = None
     added_date: Optional[date] = None
-    leave_days: Optional[int] = None
+    leave_days: Optional[int] = Field(None, ge=0, lt=365)
     technical_stacks: Optional[List[TechnicalStack]] = []
     professional_email: Optional[str] = None
     verified: Optional[EmailVerificationStatus] = Field(
         default=EmailVerificationStatus.NO
     )
+
+    @field_validator("net_salary")
+    def validate_net_salary(cls, v, info):
+        if v is not None:
+            gross_salary = info.data.get("gross_salary")
+            if gross_salary is not None and v >= gross_salary:
+                raise ValueError("Net salary must be less than gross salary")
+        return v
+
+    @field_validator("experience_years_company")
+    def validate_experience_years(cls, v, info):
+        if v is not None:
+            total_exp = info.data.get("total_experience_years")
+            if total_exp is not None and v > total_exp:
+                raise ValueError(
+                    "Company experience years cannot exceed total experience years"
+                )
+        return v
 
     @field_validator("professional_email")
     def validate_professional_email(cls, v):
