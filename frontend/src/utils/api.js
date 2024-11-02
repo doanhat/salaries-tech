@@ -13,7 +13,6 @@ const getHeaders = async () => {
   };
 };
 
-
 export const getChoices = async () => {
   try {
     const headers = await getHeaders();
