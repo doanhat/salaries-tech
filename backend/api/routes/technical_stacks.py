@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db_session
-from ..models import TechnicalStack, TechnicalStackDB
+from ..models.technical_stack import TechnicalStack, TechnicalStackDB
 
 router = APIRouter(prefix="/technical-stacks", tags=["technical-stacks"])
 

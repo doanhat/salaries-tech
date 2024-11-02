@@ -10,9 +10,9 @@ from backend.api.models import (
     EmailVerificationStatus,
     Gender,
     Level,
-    SalaryDB,
     WorkType,
 )
+from backend.api.models.salary import SalaryDB
 
 
 @pytest.mark.parametrize(

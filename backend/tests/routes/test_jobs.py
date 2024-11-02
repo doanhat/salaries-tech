@@ -1,4 +1,4 @@
-from backend.api.models import JobDB
+from backend.api.models.job import JobDB
 
 
 def test_create_job(client):

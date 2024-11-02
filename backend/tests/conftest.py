@@ -11,7 +11,10 @@ from sqlalchemy.orm import close_all_sessions, sessionmaker
 
 from backend.api.database import Base, get_db_session
 from backend.api.main import app
-from backend.api.models import CompanyDB, JobDB, SalaryDB, TagDB, TechnicalStackDB
+from backend.api.models.company import CompanyDB, TagDB
+from backend.api.models.job import JobDB
+from backend.api.models.salary import SalaryDB
+from backend.api.models.technical_stack import TechnicalStackDB
 
 # Get the absolute path to the 'backend' directory
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

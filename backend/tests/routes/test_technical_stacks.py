@@ -1,6 +1,6 @@
 from tests.conftest import sample_data
 
-from backend.api.models import TechnicalStackDB
+from backend.api.models.technical_stack import TechnicalStackDB
 
 
 def test_create_technical_stack(client):

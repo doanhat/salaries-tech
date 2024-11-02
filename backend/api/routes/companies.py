@@ -6,7 +6,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db_session
-from ..models import Company, CompanyDB, Tag, TagDB, company_tag
+from ..models import company_tag
+from ..models.company import Company, CompanyDB, Tag, TagDB
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 

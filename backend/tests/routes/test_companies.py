@@ -1,6 +1,7 @@
 import uuid
 
-from backend.api.models import CompanyDB, CompanyType
+from backend.api.models import CompanyType
+from backend.api.models.company import CompanyDB
 
 
 def test_create_company(client):

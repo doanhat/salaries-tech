@@ -4,16 +4,11 @@ from sqlalchemy.orm import Session
 
 from ..config.logger import logger
 from ..database import get_db_session
-from ..models import (
-    CompanyDB,
-    CompanyType,
-    JobDB,
-    Level,
-    SalaryDB,
-    TagDB,
-    TechnicalStackDB,
-    WorkType,
-)
+from ..models import CompanyType, Level, WorkType
+from ..models.company import CompanyDB, TagDB
+from ..models.job import JobDB
+from ..models.salary import SalaryDB
+from ..models.technical_stack import TechnicalStackDB
 from ..tools.text import capitalize_words
 
 router = APIRouter(tags=["commons"])

@@ -17,22 +17,11 @@ from sqlalchemy.orm import Session
 
 from ..config.logger import logger
 from ..database import get_db_session
-from ..models import (
-    Company,
-    CompanyDB,
-    EmailBody,
-    EmailVerificationStatus,
-    Job,
-    JobDB,
-    Salary,
-    SalaryDB,
-    Tag,
-    TagDB,
-    TechnicalStack,
-    TechnicalStackDB,
-    salary_job,
-    salary_technical_stack,
-)
+from ..models import EmailVerificationStatus, salary_job, salary_technical_stack
+from ..models.company import Company, CompanyDB, Tag, TagDB
+from ..models.job import Job, JobDB
+from ..models.salary import EmailBody, Salary, SalaryDB
+from ..models.technical_stack import TechnicalStack, TechnicalStackDB
 from ..services.email import get_email_hash_key, send_verification_email
 from ..services.recaptcha import verify_recaptcha
 

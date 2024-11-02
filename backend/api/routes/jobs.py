@@ -5,7 +5,8 @@ from sqlalchemy import delete, func
 from sqlalchemy.orm import Session
 
 from ..database import get_db_session
-from ..models import Job, JobDB, salary_job
+from ..models import salary_job
+from ..models.job import Job, JobDB
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
