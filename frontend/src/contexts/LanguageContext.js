@@ -143,7 +143,7 @@ export const translations = {
         name: "Actions",
         title: "Détails",
       },
-      verified: {
+      verification: {
         singular: "Vérification",
         plural: "Vérifications",
         value: {
@@ -336,7 +336,7 @@ export const translations = {
         name: "Actions",
         title: "Details",
       },
-      verified: {
+      verification: {
         singular: "Verification",
         plural: "Verifications",
         value: {

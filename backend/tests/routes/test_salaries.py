@@ -145,7 +145,7 @@ def test_create_salary(
 
         # Verify email verification
         if "professional_email" in salary_data:
-            assert response_data["verified"] == expected_verification
+            assert response_data["verification"] == expected_verification
             assert (
                 response_data["professional_email"]
                 == f"***@{salary_data['professional_email'].split('@')[1].lower()}"

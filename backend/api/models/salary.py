@@ -41,7 +41,7 @@ class SalaryDB(Base):
     )
     jobs = relationship("JobDB", secondary=salary_job, back_populates="salaries")
     email_domain = Column(String, nullable=True)
-    verified = Column(String, default=EmailVerificationStatus.NO.value)
+    verification = Column(String, default=EmailVerificationStatus.NO.value)
 
     __table_args__ = (
         CheckConstraint("net_salary >= 0", name="check_net_salary_non_negative"),
@@ -76,7 +76,7 @@ class Salary(BaseModel):
     leave_days: Optional[int] = Field(None, ge=0, lt=365)
     technical_stacks: Optional[List[TechnicalStack]] = []
     professional_email: Optional[str] = None
-    verified: Optional[EmailVerificationStatus] = Field(
+    verification: Optional[EmailVerificationStatus] = Field(
         default=EmailVerificationStatus.NO
     )
 

@@ -571,11 +571,12 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                 <Select
                   isClearable
                   onChange={(option) => handleSelectChange("gender", option)}
-                  options={[
-                    { value: "male", label: t.entities.gender.value.male },
-                    { value: "female", label: t.entities.gender.value.female },
-                    { value: "other", label: t.entities.gender.value.other },
-                  ]}
+                  options={Object.entries(t.entities.gender.value).map(
+                    ([key, value]) => ({
+                      value: key,
+                      label: value,
+                    }),
+                  )}
                   value={formData.gender ? createOption(formData.gender) : null}
                   placeholder={t.entities.info.select}
                 />

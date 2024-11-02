@@ -148,25 +148,29 @@ const SalaryTable = ({
             "N/A"
           )}
         </TableCell>
-        <TableCell>{capitalizeWords(salary.gender) || "N/A"}</TableCell>
+        <TableCell>
+          {salary.gender ? t.entities.gender.value[salary.gender] : "N/A"}
+        </TableCell>
         <TableCell>{salary.added_date || "N/A"}</TableCell>
         <TableCell>
           {salary.leave_days !== null ? salary.leave_days : "N/A"}
         </TableCell>
         <td>
-          {salary.verified === "no" && (
-            <span className="text-muted">{t.entities.verified.value.no}</span>
-          )}
-          {salary.verified === "pending" && (
-            <span className="text-warning">
-              <i className="bi bi-clock"></i>{" "}
-              {t.entities.verified.value.pending}
+          {salary.verification === "no" && (
+            <span className="text-muted">
+              {t.entities.verification.value.no}
             </span>
           )}
-          {salary.verified === "verified" && (
+          {salary.verification === "pending" && (
+            <span className="text-warning">
+              <i className="bi bi-clock"></i>{" "}
+              {t.entities.verification.value.pending}
+            </span>
+          )}
+          {salary.verification === "verified" && (
             <span className="text-success">
               <i className="bi bi-check-circle"></i>{" "}
-              {t.entities.verified.value.verified}
+              {t.entities.verification.value.verified}
             </span>
           )}
         </td>
@@ -254,7 +258,7 @@ const SalaryTable = ({
               sortOrder={sortOrder}
               onSort={onSort}
             />
-            <th>{t.entities.verified.singular}</th>
+            <th>{t.entities.verification.singular}</th>
             <StickyCell as="th" right="0">
               {t.entities.actions.name}
             </StickyCell>

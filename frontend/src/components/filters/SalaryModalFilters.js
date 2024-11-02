@@ -182,9 +182,12 @@ const SalaryModalFilters = ({
             <SelectWithTooltip
               options={[
                 { value: "n/a", label: "N/A" },
-                { value: "male", label: t.entities.gender.value.male },
-                { value: "female", label: t.entities.gender.value.female },
-                { value: "other", label: t.entities.gender.value.other },
+                ...Object.entries(t.entities.gender.value).map(
+                  ([key, value]) => ({
+                    value: key,
+                    label: value,
+                  }),
+                ),
               ]}
               onChange={handleMultiSelectChange}
               placeholder={t.entities.gender.plural}
@@ -353,19 +356,16 @@ const SalaryModalFilters = ({
             <SelectWithTooltip
               options={[
                 { value: "n/a", label: "N/A" },
-                { value: "no", label: t.entities.verified.value.no },
-                {
-                  value: "pending",
-                  label: t.entities.verified.value.pending,
-                },
-                {
-                  value: "verified",
-                  label: t.entities.verified.value.verified,
-                },
+                ...Object.entries(t.entities.verification.value).map(
+                  ([key, value]) => ({
+                    value: key,
+                    label: value,
+                  }),
+                ),
               ]}
               onChange={handleMultiSelectChange}
-              placeholder={t.entities.verified.plural}
-              title={t.entities.verified.plural}
+              placeholder={t.entities.verification.plural}
+              title={t.entities.verification.plural}
               value={pendingFilters.verifications || []}
               name="verifications"
             />

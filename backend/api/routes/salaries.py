@@ -59,11 +59,11 @@ async def create_salary(
         if salary.professional_email and email_body:
             professional_email = salary.professional_email
             salary_dict["email_domain"] = professional_email.split("@")[1].lower()
-            salary_dict["verified"] = EmailVerificationStatus.PENDING
+            salary_dict["verification"] = EmailVerificationStatus.PENDING
         else:
             professional_email = None
             salary_dict["email_domain"] = None
-            salary_dict["verified"] = EmailVerificationStatus.NO
+            salary_dict["verification"] = EmailVerificationStatus.NO
 
         if "added_date" not in salary_dict or not salary_dict["added_date"]:
             salary_dict["added_date"] = datetime.now().date()
@@ -233,8 +233,8 @@ async def get_salaries(
     technical_stacks: Optional[str] = Query(
         None, description="Comma-separated list of technical stacks"
     ),
-    verified: Optional[str] = Query(
-        None, description="Comma-separated list of verified statuses"
+    verification: Optional[str] = Query(
+        None, description="Comma-separated list of verification statuses"
     ),
 ) -> Dict[str, List[Salary] | int]:
     try:
@@ -410,13 +410,14 @@ async def get_salaries(
                     )
                     | ~SalaryDB.technical_stacks.any()
                 )
-        if verified:
-            verified_list = [v.strip().lower() for v in verified.split(",")]
-            if "n/a" not in verified_list:
-                query = query.filter(SalaryDB.verified.in_(verified_list))
+        if verification:
+            verification_list = [v.strip().lower() for v in verification.split(",")]
+            if "n/a" not in verification_list:
+                query = query.filter(SalaryDB.verification.in_(verification_list))
             else:
                 query = query.filter(
-                    SalaryDB.verified.in_(verified_list) | SalaryDB.verified.is_(None)
+                    SalaryDB.verification.in_(verification_list)
+                    | SalaryDB.verification.is_(None)
                 )
         # Apply sorting
         if sort_by in sort_field_mapping:
@@ -639,7 +640,7 @@ async def verify_email(
         if not salary:
             raise HTTPException(status_code=404, detail="Salary not found")
 
-        setattr(salary, "verified", EmailVerificationStatus.VERIFIED.value)
+        setattr(salary, "verification", EmailVerificationStatus.VERIFIED.value)
         db.commit()
 
         return {"status": "success"}

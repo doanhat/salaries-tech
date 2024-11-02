@@ -55,7 +55,7 @@ const SalaryDetailsModal = ({ show, onClose, salary, t }) => {
             </p>
             <p>
               <strong>{t.entities.gender.singular}:</strong>{" "}
-              {capitalizeWords(salary.gender) || "N/A"}
+              {salary.gender ? t.entities.gender.value[salary.gender] : "N/A"}
             </p>
             <p>
               <strong>{t.entities.experience_years_company.singular}:</strong>{" "}
@@ -84,6 +84,12 @@ const SalaryDetailsModal = ({ show, onClose, salary, t }) => {
             <p>
               <strong>{t.entities.leave_days.singular}:</strong>{" "}
               {salary.leave_days !== null ? salary.leave_days : "N/A"}
+            </p>
+            <p>
+              <strong>{t.entities.verification.singular}:</strong>{" "}
+              {salary.verification
+                ? t.entities.verification.value[salary.verification]
+                : "N/A"}
             </p>
           </div>
         )}
