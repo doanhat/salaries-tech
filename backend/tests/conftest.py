@@ -2,6 +2,7 @@ import os
 import sys
 from datetime import date
 from typing import Any, Dict, Optional
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -110,7 +111,7 @@ def unauthenticated_client(override_get_db, reset_db):
 
 
 @pytest.fixture(scope="function")
-def sample_salary(test_db):
+def sample_data(test_db):
     # Create a tag
     tag = TagDB(name="tech")
     test_db.add(tag)
@@ -151,4 +152,40 @@ def sample_salary(test_db):
     test_db.add(salary)
     test_db.commit()
 
-    return salary
+    return {
+        "salary": salary,
+        "company": company,
+        "job": job,
+        "tag": tag,
+        "technical_stack": technical_stack,
+    }
+
+
+@pytest.fixture
+def mock_recaptcha():
+    """Fixture to create mock reCAPTCHA response"""
+
+    class MockAssessment:
+        class TokenProperties:
+            valid = True
+
+        class RiskAnalysis:
+            score = 0.9
+
+        token_properties = TokenProperties()
+        risk_analysis = RiskAnalysis()
+
+    return MockAssessment()
+
+
+@pytest.fixture
+def mock_send_verification_email():
+    with patch("backend.api.services.email.send_verification_email") as mock:
+        mock.return_value = True
+        yield mock
+
+
+@pytest.fixture
+def mock_background_tasks():
+    with patch("fastapi.BackgroundTasks.add_task") as mock:
+        yield mock

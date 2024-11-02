@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from fastapi import (
     APIRouter,
@@ -450,34 +450,6 @@ async def delete_salaries(
             status_code=500,
             detail=f"An error occurred while deleting the salaries: {str(e)}",
         )
-
-
-@router.get("/stats/")
-async def get_salary_stats(
-    db: Session = Depends(get_db_session),
-) -> Dict[str, Dict[str, float] | List[Tuple[str, float]]]:
-    try:
-        from sqlalchemy import func
-
-        avg_salary_by_city = (
-            db.query(
-                SalaryDB.location, func.avg(SalaryDB.gross_salary).label("avg_salary")
-            )
-            .group_by(SalaryDB.location)
-            .all()
-        )
-
-        avg_salary_dict = {
-            city: float(avg_salary) for city, avg_salary in avg_salary_by_city if city
-        }
-        top_10_cities = sorted(
-            avg_salary_dict.items(), key=lambda x: x[1], reverse=True
-        )[:10]
-
-        return {"avg_salary_by_city": avg_salary_dict, "top_10_cities": top_10_cities}
-    except Exception as e:
-        logger.error(f"Error in get_salary_stats: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/check-location/")

@@ -1,11 +1,11 @@
 from typing import Dict, List
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import delete, func
 from sqlalchemy.orm import Session
 
 from ..database import get_db_session
-from ..models import Job, JobDB
+from ..models import Job, JobDB, salary_job
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -31,6 +31,30 @@ async def get_jobs(
         ],
         "total": len(jobs),
     }
+
+
+@router.delete("/", response_model=None)
+async def delete_jobs(
+    job_ids: List[int] = Query(...), db: Session = Depends(get_db_session)
+) -> Dict[str, str]:
+    jobs = db.query(JobDB).filter(JobDB.id.in_(job_ids)).all()
+
+    # Check if any jobs were not found
+    found_ids = {int(job.id) for job in jobs}  # Explicitly convert to int
+    not_found_ids = set(job_ids) - found_ids
+
+    if not_found_ids:
+        raise HTTPException(
+            status_code=404, detail=f"Jobs with IDs {not_found_ids} not found"
+        )
+
+    # Delete the associations in the junction table
+    delete_stmt = delete(salary_job).where(salary_job.c.job_id.in_(job_ids))
+    db.execute(delete_stmt)
+    for job in jobs:
+        db.delete(job)
+    db.commit()
+    return {"message": f"Jobs with IDs {job_ids} have been deleted successfully"}
 
 
 @router.get("/check-title/")
