@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import (
     APIRouter,
@@ -12,7 +12,6 @@ from fastapi import (
 )
 from jose import jwt
 from pydantic import ValidationError
-from pyparsing import Any
 from sqlalchemy import asc, delete, desc, func
 from sqlalchemy.orm import Session
 

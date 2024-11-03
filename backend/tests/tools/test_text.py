@@ -40,6 +40,3 @@ def test_capitalize_words_with_single_letter_words():
 
 def test_capitalize_words_with_apostrophes():
     assert capitalize_words("it's a test") == "It's A Test"
-
-
-# Add more tests for your utility functions here
