@@ -82,20 +82,33 @@ const DatePickerWithTooltip = ({ name, selected, onChange, title }) => (
 );
 
 const ModalContainer = styled.div`
-  max-width: 1200px;
   margin: 0 auto;
   padding: 0.5rem;
+  width: 100%;
+
+  @media (max-width: 767px) {
+    padding: 0.25rem;
+  }
 `;
 
 const FilterForm = styled(Form)`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  width: 100%;
 `;
 
 const ButtonRow = styled(Row)`
   margin-top: 1rem;
-  padding-bottom: 0.5rem;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+`;
+
+const ButtonCol = styled(Col)`
+  display: flex;
+  gap: 0.5rem;
 `;
 
 const SalaryModalFilters = ({
@@ -374,7 +387,7 @@ const SalaryModalFilters = ({
           </Col>
         </Row>
         <ButtonRow>
-          <Col>
+          <ButtonCol>
             <Button
               variant="secondary"
               onClick={onClose}
@@ -382,17 +395,13 @@ const SalaryModalFilters = ({
             >
               {t.entities.buttons.close}
             </Button>
-            <Button variant="primary" type="submit" className="ms-2">
+            <Button variant="primary" type="submit">
               {t.entities.buttons.apply_filters}
             </Button>
-            <Button
-              variant="outline-secondary"
-              onClick={onReset}
-              className="ms-2"
-            >
+            <Button variant="outline-secondary" onClick={onReset}>
               {t.entities.buttons.reset_filters}
             </Button>
-          </Col>
+          </ButtonCol>
         </ButtonRow>
       </FilterForm>
     </ModalContainer>

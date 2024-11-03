@@ -62,14 +62,26 @@ const StyledModal = styled(Modal)`
   .modal-dialog {
     max-width: 90%;
     margin: 1rem auto;
+
+    @media (max-width: 767px) {
+      max-width: 95%; // Increase width on mobile
+      margin: 0.5rem auto;
+    }
   }
 
   .modal-content {
     max-height: calc(100vh - 2rem);
+    width: 100%; // Ensure content doesn't overflow
+
+    @media (max-width: 767px) {
+      max-height: calc(100vh - 1rem);
+      margin: 0;
+    }
   }
 
   .modal-body {
     padding: 0.5rem;
+    overflow-x: hidden; // Prevent horizontal scroll
   }
 
   .modal-header {
