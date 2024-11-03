@@ -1,6 +1,6 @@
 # Tech Salary Information 
 
-This project consists of a backend API and a frontend application for managing and displaying salary information.
+This project consists of a backend API and a frontend application for managing and displaying salary information. Link : https://salaries-tech.web.app/
 
 ## Prerequisites
 
