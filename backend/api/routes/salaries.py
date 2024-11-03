@@ -233,7 +233,7 @@ async def get_salaries(
     technical_stacks: Optional[str] = Query(
         None, description="Comma-separated list of technical stacks"
     ),
-    verification: Optional[str] = Query(
+    verifications: Optional[str] = Query(
         None, description="Comma-separated list of verification statuses"
     ),
 ) -> Dict[str, List[Salary] | int]:
@@ -410,8 +410,8 @@ async def get_salaries(
                     )
                     | ~SalaryDB.technical_stacks.any()
                 )
-        if verification:
-            verification_list = [v.strip().lower() for v in verification.split(",")]
+        if verifications:
+            verification_list = [v.strip().lower() for v in verifications.split(",")]
             if "n/a" not in verification_list:
                 query = query.filter(SalaryDB.verification.in_(verification_list))
             else:
