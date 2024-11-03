@@ -52,6 +52,11 @@ from backend.api.models.salary import SalaryDB
                 "gross_salary": 50000,
                 "work_type": WorkType.REMOTE.value,
                 "location": "New York",
+                "company": {
+                    "name": "example",
+                    "type": CompanyType.STARTUP.value,
+                    "tags": [{"name": "tech"}],
+                },
                 "professional_email": "test@example.com",
             },
             {

@@ -23,7 +23,11 @@ from ..models.company import Company, CompanyDB, Tag, TagDB
 from ..models.job import Job, JobDB
 from ..models.salary import EmailBody, Salary, SalaryDB
 from ..models.technical_stack import TechnicalStack, TechnicalStackDB
-from ..services.email import get_email_hash_key, send_verification_email
+from ..services.email import (
+    check_domain_company_match,
+    get_email_hash_key,
+    send_verification_email,
+)
 from ..services.recaptcha import verify_recaptcha
 
 router = APIRouter(prefix="/salaries", tags=["salaries"])
@@ -646,3 +650,18 @@ async def verify_email(
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/check-email-company/", response_model=Dict[str, bool | float | str])
+async def check_email_company_match(
+    email: str = Query(...),
+    company_name: str = Query(...),
+) -> Dict[str, bool | float | str]:
+    try:
+        return check_domain_company_match(email, company_name)
+
+    except IndexError:
+        raise HTTPException(status_code=400, detail="Invalid email format")
+    except Exception as e:
+        logger.error(f"Error checking email-company match: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

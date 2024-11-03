@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from difflib import SequenceMatcher
 
 from jose import jwt
 from sendgrid import SendGridAPIClient
@@ -6,11 +7,13 @@ from sendgrid.helpers.mail import Email, Header, Mail
 
 from ..config.env import (
     ALLOWED_ORIGINS,
+    COMMON_DOMAINS,
     EMAIL_VERIFICATION_SECRET_NAME,
     ENV,
     PROJECT_ID,
     SENDGRID_API_KEY,
     SENDGRID_FROM_EMAIL,
+    WELL_KNOWN_DOMAINS,
 )
 from ..config.logger import logger
 from ..tools.gcp.secrets import get_secret
@@ -112,3 +115,58 @@ async def send_verification_email(
             # Re-raise configuration errors
             raise
         return False
+
+
+def check_domain_company_match(
+    email: str, company_name: str | None, threshold: float = 0.9
+) -> dict:
+    domain = email.split("@")[1].lower()
+    if domain in COMMON_DOMAINS:
+        return {
+            "is_valid": False,
+            "similarity": 0.0,
+            "message": "Please use a professional email address",
+            "code": "invalid_common_domain",
+        }
+    if not company_name:
+        return {
+            "is_valid": False,
+            "similarity": 0.0,
+            "message": "Company name is required for domain check",
+            "code": "invalid_company_name_required",
+        }
+    # Check for known company domains first
+    company_name_clean = company_name.lower().strip()
+    for known_company, valid_domains in WELL_KNOWN_DOMAINS.items():
+        if known_company in company_name_clean or any(
+            kc in company_name_clean for kc in known_company.split()
+        ):
+            if domain in valid_domains:
+                return {
+                    "is_valid": True,
+                    "similarity": 1.0,
+                    "message": "Valid company email for known company",
+                    "code": "valid_company_email",
+                }
+
+    # If not a known company, do similarity check
+    email_domain_parts = domain.split(".")
+    email_domain_base = email_domain_parts[0]
+
+    # Clean company name for comparison
+    company_words = "".join(e for e in company_name_clean if e.isalnum()).lower()
+    email_domain_clean = "".join(e for e in email_domain_base if e.isalnum()).lower()
+
+    # Calculate similarity ratio
+    similarity = SequenceMatcher(None, company_words, email_domain_clean).ratio()
+    is_valid = similarity >= threshold
+    return {
+        "is_valid": is_valid,
+        "similarity": similarity,
+        "message": "Valid company email from similarity check"
+        if is_valid
+        else "Invalid company email from similarity check",
+        "code": "valid_company_email_similarity"
+        if is_valid
+        else "invalid_company_email_similarity",
+    }

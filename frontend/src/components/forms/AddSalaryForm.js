@@ -10,6 +10,7 @@ import {
   checkJobTitle,
   checkTechnicalStack,
   RECAPTCHA_SITE_KEY,
+  checkEmailCompanyMatch,
 } from "../../utils/api";
 import { capitalizeWords } from "../../utils/stringUtils";
 import { useLanguage, translations } from "../../contexts/LanguageContext";
@@ -55,12 +56,57 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
   const [isNewCompany, setIsNewCompany] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
 
+  const validateEmailCompanyMatch = useCallback(
+    async (email, companyName) => {
+      if (!email) return true;
+      try {
+        const result = await checkEmailCompanyMatch(email, companyName);
+        if (!result.is_valid) {
+          setErrors((prev) => ({
+            ...prev,
+            professional_email: t.entities.errors[result.code],
+          }));
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error("Error validating email-company match:", error);
+        return false;
+      }
+    },
+    [setErrors, t.entities.errors],
+  );
+
+  const validateEmail = (email) => {
+    if (!email) return true; // Optional field
+    if (email && !formData.company_name) return false;
+    const domain = email.split("@")[1]?.toLowerCase();
+    return domain && !COMMON_EMAIL_DOMAINS.includes(domain);
+  };
+
   useEffect(() => {
     if (show) {
       setFormData(initialFormData);
       setErrors({});
     }
   }, [show, choices.technical_stacks]);
+
+  // Add real-time validation when email or company changes
+  useEffect(() => {
+    const validateEmailCompany = async () => {
+      if (formData.professional_email && formData.company_name) {
+        await validateEmailCompanyMatch(
+          formData.professional_email,
+          formData.company_name,
+        );
+      }
+    };
+    validateEmailCompany();
+  }, [
+    formData.professional_email,
+    formData.company_name,
+    validateEmailCompanyMatch,
+  ]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -262,6 +308,15 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
       return;
     }
 
+    // Validate email-company match before submission
+    if (formData.professional_email && formData.company_name) {
+      const isValidMatch = await validateEmailCompanyMatch(
+        formData.professional_email,
+        formData.company_name,
+      );
+      if (!isValidMatch) return;
+    }
+
     const newErrors = {};
 
     // Required fields validation
@@ -278,7 +333,12 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
       formData.professional_email &&
       !validateEmail(formData.professional_email)
     ) {
-      newErrors.professional_email = t.entities.errors.professional_email;
+      if (formData.company_name) {
+        newErrors.professional_email = t.entities.errors.invalid_common_domain;
+      } else {
+        newErrors.professional_email =
+          t.entities.errors.invalid_company_name_required;
+      }
     }
 
     // Numeric fields validation
@@ -350,12 +410,6 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
     value: preserveCase ? label : label.toLowerCase(),
   });
 
-  const validateEmail = (email) => {
-    if (!email) return true; // Optional field
-    const domain = email.split("@")[1]?.toLowerCase();
-    return domain && !COMMON_EMAIL_DOMAINS.includes(domain);
-  };
-
   return (
     <Modal show={show} onHide={handleClose} size="lg">
       <Modal.Header closeButton>
@@ -384,7 +438,9 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                       ? createOption(formData.company_name, true)
                       : null
                   }
-                  formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
+                  formatCreateLabel={(inputValue) =>
+                    `${t.entities.info.add} "${inputValue}"`
+                  }
                   backspaceRemovesValue={true}
                   placeholder={t.entities.company.name.placeholder}
                 />

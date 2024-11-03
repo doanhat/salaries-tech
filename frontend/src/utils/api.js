@@ -292,3 +292,29 @@ export const verifyEmail = async (token) => {
     { headers },
   );
 };
+
+export const checkEmailCompanyMatch = async (email, companyName) => {
+  try {
+    const headers = await getHeaders();
+    const queryParams = new URLSearchParams({
+      email: email,
+      company_name: companyName,
+    });
+
+    const response = await fetch(
+      `${API_BASE_URL}/salaries/check-email-company/?${queryParams}`,
+      {
+        credentials: "include",
+        headers,
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error checking email-company match:", error);
+    throw error;
+  }
+};

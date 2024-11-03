@@ -182,14 +182,18 @@ export const translations = {
         job_titles_max: "Vous pouvez sélectionner jusqu'à 2 postes",
         company_type:
           "Type d'entreprise est requis pour les nouvelles entreprises",
-        professional_email:
+        invalid_common_domain:
           "Veuillez utiliser un email professionnel. Les emails personnels ne sont pas acceptés.",
+        invalid_company_name_required:
+          "Veuillez renseigner une entreprise pour vérifier votre email",
+        invalid_company_email_similarity:
+          "Email professionnel invalide de la vérification de similarité",
         exists: "Cette {field} existe déjà",
         submit: "Erreur lors de l'ajout du salaire. Veuillez réessayer.",
         no_salaries: "Aucun salaire trouvé.",
         negative_value: "La valeur ne peut pas être négative",
         net_salary_exceeds_gross:
-          "Le salaire net ne peut pas être supérieur au salaire brut",
+          "Le salaire net doit être inférieur au salaire brut",
         company_experience_exceeds_total:
           "L'expérience dans l'entreprise ne peut pas dépasser l'expérience totale",
         leave_days_exceed_year:
@@ -374,14 +378,17 @@ export const translations = {
         job_titles: "At least one job title is required",
         job_titles_max: "You can select up to 2 job titles",
         company_type: "Company type is required for new companies",
-        professional_email:
+        invalid_common_domain:
           "Please use a professional email. Personal emails are not accepted.",
+        invalid_company_name_required:
+          "Please enter a company to verify your email",
+        invalid_company_email_similarity:
+          "Invalid company email from similarity check",
         exists: "{field} already exists",
         submit: "Error adding salary. Please try again.",
         no_salaries: "No salaries found.",
         negative_value: "Value cannot be negative",
-        net_salary_exceeds_gross:
-          "Net salary cannot be greater than gross salary",
+        net_salary_exceeds_gross: "Net salary must be less than gross salary",
         company_experience_exceeds_total:
           "Company experience cannot exceed total experience",
         leave_days_exceed_year: "Leave days cannot exceed 365 days",

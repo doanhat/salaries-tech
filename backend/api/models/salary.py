@@ -6,6 +6,7 @@ from sqlalchemy import CheckConstraint, Column, Date, Float, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from ..database import Base
+from ..services.email import check_domain_company_match
 from . import (
     EmailVerificationStatus,
     Gender,
@@ -75,7 +76,7 @@ class Salary(BaseModel):
     added_date: Optional[date] = None
     leave_days: Optional[int] = Field(None, ge=0, lt=365)
     technical_stacks: Optional[List[TechnicalStack]] = []
-    professional_email: Optional[str] = None
+    professional_email: Optional[str] = Field(None)
     verification: Optional[EmailVerificationStatus] = Field(
         default=EmailVerificationStatus.NO
     )
@@ -84,7 +85,7 @@ class Salary(BaseModel):
     def validate_net_salary(cls, v, info):
         if v is not None:
             gross_salary = info.data.get("gross_salary")
-            if gross_salary is not None and v >= gross_salary:
+            if gross_salary and v >= gross_salary:
                 raise ValueError("Net salary must be less than gross salary")
         return v
 
@@ -92,33 +93,26 @@ class Salary(BaseModel):
     def validate_experience_years(cls, v, info):
         if v is not None:
             total_exp = info.data.get("total_experience_years")
-            if total_exp is not None and v > total_exp:
+            if total_exp and v > total_exp:
                 raise ValueError(
                     "Company experience years cannot exceed total experience years"
                 )
         return v
 
     @field_validator("professional_email")
-    def validate_professional_email(cls, v):
-        if v is None:
+    def validate_professional_email(cls, v, info):
+        if not v:
             return v
-        common_domains = [
-            "gmail.com",
-            "yahoo.com",
-            "hotmail.com",
-            "outlook.com",
-            "aol.com",
-            "protonmail.com",
-            "icloud.com",
-            "mail.com",
-            "live.com",
-            "me.com",
-            "msn.com",
-        ]
         try:
-            domain = v.split("@")[1].lower()
-            if domain in common_domains:
-                raise ValueError("Please use a professional email address")
+            company_name = None
+            company_data = info.data.get("company")
+            if company_data and hasattr(company_data, "name"):
+                company_name = company_data.name.lower()
+
+            result = check_domain_company_match(v, company_name)
+            if not result["is_valid"]:
+                raise ValueError(result["message"])
+
         except IndexError:
             raise ValueError("Invalid email format")
         return v
