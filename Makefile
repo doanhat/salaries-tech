@@ -86,6 +86,7 @@ sync: install-backend ## Sync data from API
 
 .PHONY: create-dev-data
 create-dev-data:
+	rm -f backend/salaries_dev_data.db backend/salaries_dev_data.db-* && \
 	turso db shell salaries .dump > dump.sql && cat dump.sql | sqlite3 backend/salaries_dev_data.db 
 
 .PHONY: replace-db
