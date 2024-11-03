@@ -110,8 +110,10 @@ const SalaryModalFilters = ({
   onClose,
   onReset,
 }) => {
-  const createOptions = (items) =>
-    items?.map((item) => ({ value: item, label: item })) || [];
+  const createOptions = (items) => [
+    { value: "n/a", label: "N/A" },
+    ...(items?.map((item) => ({ value: item, label: item })) || []),
+  ];
 
   return (
     <ModalContainer>

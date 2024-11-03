@@ -461,15 +461,20 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                 </Form.Label>
                 <CreatableSelect
                   isMulti
+                  isClearable
                   onChange={(selectedOptions) =>
                     handleMultiSelectChange("job_titles", selectedOptions)
                   }
                   options={
                     choices.job_titles
-                      ? choices.job_titles.map(createOption)
+                      ? choices.job_titles.map((job_title) =>
+                          createOption(job_title),
+                        )
                       : []
                   }
-                  value={formData.job_titles.map(createOption)}
+                  value={formData.job_titles.map((job_title) =>
+                    createOption(job_title),
+                  )}
                   isOptionDisabled={() => formData.job_titles.length >= 2}
                   placeholder={t.entities.job.titles.placeholder}
                   isInvalid={!!errors.job_titles}
