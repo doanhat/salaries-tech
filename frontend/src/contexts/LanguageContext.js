@@ -117,8 +117,8 @@ export const translations = {
         max: "Exp Totale Max",
       },
       work_type: {
-        singular: "Type de contrat",
-        plural: "Types de contrat",
+        singular: "Type de travail",
+        plural: "Types de travail",
       },
       leave_days: {
         singular: "Jours de congé",
