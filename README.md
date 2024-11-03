@@ -1,6 +1,6 @@
 # Tech Salary Information 
 
-This project consists of a backend API and a frontend application for managing and displaying salary information. Link : https://salaries-tech.web.app/
+This project consists of a backend API and a frontend application for managing and displaying salary information. Link: https://salaries-tech.web.app/
 
 ## Prerequisites
 
@@ -54,28 +54,27 @@ To run the project locally:
    ```bash
    make run-local
    ```
+   This will start the backend at `http://localhost:8000` and the frontend at `http://localhost:3000`.
 
-This will start the backend at `http://localhost:8000` and the frontend at `http://localhost:3000`.
-
-3. To cleanup:
+3. To stop all services:
    ```bash
    make cleanup
    ```
 
-## Local Testing
+## Testing and Code Quality
 
-- Backend:
-  ```bash
-  make check-backend
-  make test-backend
-  ```
+### Backend
+```bash
+make check-backend    # Run linters and static analysis
+make test-backend    # Run unit tests
+```
 
-- Frontend:
-  ```bash
-  make lint-frontend
-  make format-frontend
-  make test-frontend
-  ```
+### Frontend
+```bash
+make lint-frontend    # Run ESLint
+make format-frontend  # Format code with Prettier
+make test-frontend   # Run tests
+```
 
 ## Database Management (need Turso database token)
 
@@ -102,11 +101,35 @@ This will start the backend at `http://localhost:8000` and the frontend at `http
 
 ## Environment Variables
 
+### Backend Variables
 - `PROJECT_ID`: Google Cloud Project ID
 - `REGION`: Google Cloud region (default: europe-west1)
 - `CAPTCHA_KEY`: Google reCAPTCHA site key
-- `LOCAL_BACKEND_URL`: URL for local backend (default: http://localhost:8000)
-- `LOCAL_FRONTEND_URL`: URL for local frontend (default: http://localhost:3000)
-- `LOCAL_SQLALCHEMY_DATABASE_URL`: SQLite database URL for local development
+- `LOCAL_FRONTEND_URL`: Frontend URL (default: http://localhost:3000)
+- `LOCAL_SQLALCHEMY_DATABASE_URL`: SQLite database URL
+- `API_KEY_SECRET_NAME`: Secret name for API key
+- `EMAIL_VERIFICATION_SECRET_NAME`: Secret name for email verification
+- `SENDGRID_FROM_EMAIL`: SendGrid sender email
+- `SENDGRID_API_KEY`: SendGrid API key
+
+### Frontend Variables
+- `LOCAL_BACKEND_URL`: Backend URL (default: http://localhost:8000)
 - `FIREBASE_SITE_NAME`: Firebase hosting site name
+- `FIREBASE_API_KEY`: Firebase API key
+- `FIREBASE_AUTH_DOMAIN`: Firebase auth domain
+- `FIREBASE_STORAGE_BUCKET`: Firebase storage bucket
+- `FIREBASE_MESSAGING_SENDER_ID`: Firebase messaging sender ID
+- `FIREBASE_APP_ID`: Firebase app ID
+- `FIREBASE_MEASUREMENT_ID`: Firebase measurement ID
+
+## Project Structure
+
+```
+.
+├── backend/           # FastAPI backend application
+├── frontend/         # React frontend application
+├── Makefile         # Build and deployment commands
+├── poetry.lock      # Python dependencies lock file
+└── pyproject.toml   # Python project configuration
+```
 
