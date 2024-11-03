@@ -15,6 +15,12 @@ API_KEY_SECRET_NAME := salaries-api-key
 EMAIL_VERIFICATION_SECRET_NAME := salaries-email-verification
 LOCAL_SENDGRID_FROM_EMAIL := hello@salaries.tech
 LOCAL_SENDGRID_API_KEY := sg-api-key
+LOCAL_FIREBASE_API_KEY := local-firebase-api-key
+LOCAL_FIREBASE_AUTH_DOMAIN := ${PROJECT_ID}.firebaseapp.com
+LOCAL_FIREBASE_STORAGE_BUCKET := ${PROJECT_ID}.firebasestorage.app
+LOCAL_FIREBASE_MESSAGING_SENDER_ID := local-firebase-messaging-sender-id
+LOCAL_FIREBASE_APP_ID := local-firebase-app-id
+LOCAL_FIREBASE_MEASUREMENT_ID := local-firebase-measurement-id
 
 # Backend
 install-backend: .install-backend .cache ## Install project dependencies
@@ -115,6 +121,13 @@ set-local-env:
 		echo "REACT_APP_API_BASE_URL=" > frontend/.env; \
 		echo "REACT_APP_RECAPTCHA_SITE_KEY=" >> frontend/.env; \
 		echo "REACT_APP_API_KEY=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_API_KEY=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_AUTH_DOMAIN=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_PROJECT_ID=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_STORAGE_BUCKET=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_MESSAGING_SENDER_ID=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_APP_ID=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_MEASUREMENT_ID=" >> frontend/.env; \
 	fi
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$(LOCAL_FRONTEND_URL)"'|' backend/api/.env; \
@@ -141,10 +154,24 @@ set-local-env:
 		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
 		sed -i '' 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(CAPTCHA_KEY)"'|' frontend/.env; \
 		sed -i '' 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$(API_KEY_SECRET_NAME)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_API_KEY=.*|REACT_APP_FIREBASE_API_KEY='"$(LOCAL_FIREBASE_API_KEY)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_AUTH_DOMAIN=.*|REACT_APP_FIREBASE_AUTH_DOMAIN='"$(LOCAL_FIREBASE_AUTH_DOMAIN)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_PROJECT_ID=.*|REACT_APP_FIREBASE_PROJECT_ID='"$(PROJECT_ID)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_STORAGE_BUCKET=.*|REACT_APP_FIREBASE_STORAGE_BUCKET='"$(LOCAL_FIREBASE_STORAGE_BUCKET)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_MESSAGING_SENDER_ID=.*|REACT_APP_FIREBASE_MESSAGING_SENDER_ID='"$(LOCAL_FIREBASE_MESSAGING_SENDER_ID)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_APP_ID=.*|REACT_APP_FIREBASE_APP_ID='"$(LOCAL_FIREBASE_APP_ID)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_MEASUREMENT_ID=.*|REACT_APP_FIREBASE_MEASUREMENT_ID='"$(LOCAL_FIREBASE_MEASUREMENT_ID)"'|' frontend/.env; \
 	else \
 		sed -i 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$(LOCAL_BACKEND_URL)"'|' frontend/.env; \
 		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(CAPTCHA_KEY)"'|' frontend/.env; \
 		sed -i 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$(API_KEY_SECRET_NAME)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_API_KEY=.*|REACT_APP_FIREBASE_API_KEY='"$(LOCAL_FIREBASE_API_KEY)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_AUTH_DOMAIN=.*|REACT_APP_FIREBASE_AUTH_DOMAIN='"$(LOCAL_FIREBASE_AUTH_DOMAIN)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_PROJECT_ID=.*|REACT_APP_FIREBASE_PROJECT_ID='"$(PROJECT_ID)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_STORAGE_BUCKET=.*|REACT_APP_FIREBASE_STORAGE_BUCKET='"$(LOCAL_FIREBASE_STORAGE_BUCKET)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_MESSAGING_SENDER_ID=.*|REACT_APP_FIREBASE_MESSAGING_SENDER_ID='"$(LOCAL_FIREBASE_MESSAGING_SENDER_ID)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_APP_ID=.*|REACT_APP_FIREBASE_APP_ID='"$(LOCAL_FIREBASE_APP_ID)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_MEASUREMENT_ID=.*|REACT_APP_FIREBASE_MEASUREMENT_ID='"$(LOCAL_FIREBASE_MEASUREMENT_ID)"'|' frontend/.env; \
 	fi
 
 .PHONY: run-local
@@ -175,27 +202,6 @@ build-and-push: enable-apis requirements.txt
 	@echo "Building and pushing Docker image to GCR..."
 	gcloud builds submit --tag $(GCR_IMAGE)
 
-set-backend-env:
-	@if [ ! -f backend/api/.env ]; then \
-		echo "ALLOWED_ORIGINS=" > backend/api/.env; \
-		echo "PROJECT_ID=" >> backend/api/.env; \
-		echo "RECAPTCHA_KEY=" >> backend/api/.env; \
-	fi && \
-	SITE_NAME=$${FIREBASE_SITE_NAME:-$(FIREBASE_SITE_NAME)} && \
-	FIREBASE_URL="https://$$SITE_NAME.web.app" && \
-	PROJECT_ID=$$(if [ -n "$(PROJECT_ID)" ]; then echo "$(PROJECT_ID)"; else awk -F "=" "/PROJECT_ID/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) && \
-	RECAPTCHA_KEY=$$(if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) && \
-	echo "Firebase URL: $$FIREBASE_URL" && \
-	if [ "$$(uname)" = "Darwin" ]; then \
-		sed -i '' 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$$FIREBASE_URL"'|' backend/api/.env; \
-		sed -i '' 's|^PROJECT_ID=.*|PROJECT_ID='"$$PROJECT_ID"'|' backend/api/.env; \
-		sed -i '' 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$$RECAPTCHA_KEY"'|' backend/api/.env; \
-	else \
-		sed -i 's|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS='"$$FIREBASE_URL"'|' backend/api/.env; \
-		sed -i 's|^PROJECT_ID=.*|PROJECT_ID='"$$PROJECT_ID"'|' backend/api/.env; \
-		sed -i 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$$RECAPTCHA_KEY"'|' backend/api/.env; \
-	fi
-
 deploy-backend: build-and-push
 	@echo "Deploying to Google Cloud Run..."
 	gcloud run deploy $(IMAGE_NAME) \
@@ -204,9 +210,9 @@ deploy-backend: build-and-push
 		--region $(REGION) \
 		--allow-unauthenticated \
 		--set-env-vars PROJECT_ID=$(PROJECT_ID) \
-		--set-env-vars RECAPTCHA_KEY=$(shell if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
-		--set-env-vars ALLOWED_ORIGINS=$(shell if [ -n "$(ALLOWED_ORIGINS)" ]; then echo "$(ALLOWED_ORIGINS)"; else awk -F "=" "/ALLOWED_ORIGINS/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
-		--set-env-vars SQLALCHEMY_DATABASE_URL=$(shell if [ -n "$(SQLALCHEMY_DATABASE_URL)" ]; then echo "$(SQLALCHEMY_DATABASE_URL)"; else awk -F "=" "/SQLALCHEMY_DATABASE_URL/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) \
+		--set-env-vars RECAPTCHA_KEY=$(RECAPTCHA_KEY) \
+		--set-env-vars ALLOWED_ORIGINS=https://$(FIREBASE_SITE_NAME).web.app \
+		--set-env-vars SQLALCHEMY_DATABASE_URL=$(SQLALCHEMY_DATABASE_URL) \
 		--set-env-vars ENV=$(ENV) \
 		--set-env-vars API_KEY_SECRET_NAME=$(API_KEY_SECRET_NAME) \
 		--set-env-vars EMAIL_VERIFICATION_SECRET_NAME=$(EMAIL_VERIFICATION_SECRET_NAME) \
@@ -216,21 +222,41 @@ deploy-backend: build-and-push
 
 set-frontend-env:
 	@CLOUD_RUN_URL=$$(gcloud run services describe $(IMAGE_NAME) --region $(REGION) --format='value(status.url)') && \
-	RECAPTCHA_KEY=$$(if [ -n "$(RECAPTCHA_KEY)" ]; then echo "$(RECAPTCHA_KEY)"; else awk -F "=" "/RECAPTCHA_KEY/ {print substr(\$$0, index(\$$0,\"=\")+1)}" backend/api/.env; fi) && \
 	API_KEY=$$(gcloud secrets versions access latest --secret=$(API_KEY_SECRET_NAME)) && \
 	if [ ! -f frontend/.env ]; then \
 		echo "REACT_APP_API_BASE_URL=" > frontend/.env; \
 		echo "REACT_APP_RECAPTCHA_SITE_KEY=" >> frontend/.env; \
 		echo "REACT_APP_API_KEY=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_API_KEY=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_AUTH_DOMAIN=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_PROJECT_ID=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_STORAGE_BUCKET=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_MESSAGING_SENDER_ID=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_APP_ID=" >> frontend/.env; \
+		echo "REACT_APP_FIREBASE_MEASUREMENT_ID=" >> frontend/.env; \
 	fi && \
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sed -i '' 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$$CLOUD_RUN_URL"'|' frontend/.env; \
-		sed -i '' 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$$RECAPTCHA_KEY"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(RECAPTCHA_KEY)"'|' frontend/.env; \
 		sed -i '' 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$$API_KEY"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_API_KEY=.*|REACT_APP_FIREBASE_API_KEY='"$(FIREBASE_API_KEY)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_AUTH_DOMAIN=.*|REACT_APP_FIREBASE_AUTH_DOMAIN='"$(FIREBASE_AUTH_DOMAIN)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_PROJECT_ID=.*|REACT_APP_FIREBASE_PROJECT_ID='"$(PROJECT_ID)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_STORAGE_BUCKET=.*|REACT_APP_FIREBASE_STORAGE_BUCKET='"$(FIREBASE_STORAGE_BUCKET)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_MESSAGING_SENDER_ID=.*|REACT_APP_FIREBASE_MESSAGING_SENDER_ID='"$(FIREBASE_MESSAGING_SENDER_ID)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_APP_ID=.*|REACT_APP_FIREBASE_APP_ID='"$(FIREBASE_APP_ID)"'|' frontend/.env; \
+		sed -i '' 's|^REACT_APP_FIREBASE_MEASUREMENT_ID=.*|REACT_APP_FIREBASE_MEASUREMENT_ID='"$(FIREBASE_MEASUREMENT_ID)"'|' frontend/.env; \
 	else \
 		sed -i 's|^REACT_APP_API_BASE_URL=.*|REACT_APP_API_BASE_URL='"$$CLOUD_RUN_URL"'|' frontend/.env; \
-		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$$RECAPTCHA_KEY"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_RECAPTCHA_SITE_KEY=.*|REACT_APP_RECAPTCHA_SITE_KEY='"$(RECAPTCHA_KEY)"'|' frontend/.env; \
 		sed -i 's|^REACT_APP_API_KEY=.*|REACT_APP_API_KEY='"$$API_KEY"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_API_KEY=.*|REACT_APP_FIREBASE_API_KEY='"$(FIREBASE_API_KEY)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_AUTH_DOMAIN=.*|REACT_APP_FIREBASE_AUTH_DOMAIN='"$(FIREBASE_AUTH_DOMAIN)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_PROJECT_ID=.*|REACT_APP_FIREBASE_PROJECT_ID='"$(PROJECT_ID)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_STORAGE_BUCKET=.*|REACT_APP_FIREBASE_STORAGE_BUCKET='"$(FIREBASE_STORAGE_BUCKET)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_MESSAGING_SENDER_ID=.*|REACT_APP_FIREBASE_MESSAGING_SENDER_ID='"$(FIREBASE_MESSAGING_SENDER_ID)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_APP_ID=.*|REACT_APP_FIREBASE_APP_ID='"$(FIREBASE_APP_ID)"'|' frontend/.env; \
+		sed -i 's|^REACT_APP_FIREBASE_MEASUREMENT_ID=.*|REACT_APP_FIREBASE_MEASUREMENT_ID='"$(FIREBASE_MEASUREMENT_ID)"'|' frontend/.env; \
 	fi
 
 
