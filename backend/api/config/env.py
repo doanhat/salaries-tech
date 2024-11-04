@@ -12,7 +12,8 @@ load_dotenv(ENV_PATH)
 ENV = os.getenv("ENV", "dev")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 SQLALCHEMY_DATABASE_URL = os.getenv(
-    "SQLALCHEMY_DATABASE_URL", "sqlite:///././salaries.db"
+    "SQLALCHEMY_DATABASE_URL",
+    "postgresql://postgres:postgres@localhost:5432/salaries_db",
 )
 API_KEY_SECRET_NAME = os.getenv("API_KEY_SECRET_NAME")
 PROJECT_ID = os.getenv("PROJECT_ID")
