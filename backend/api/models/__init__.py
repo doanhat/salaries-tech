@@ -47,20 +47,44 @@ class EmailVerificationStatus(str, Enum):
 salary_technical_stack = Table(
     "salary_technical_stack",
     Base.metadata,
-    Column("salary_id", Integer, ForeignKey("salaries.id")),
-    Column("technical_stack_id", Integer, ForeignKey("technical_stacks.id")),
+    Column(
+        "salary_id",
+        Integer,
+        ForeignKey("salaries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "technical_stack_id",
+        Integer,
+        ForeignKey("technical_stacks.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 # Association table for many-to-many relationship between Salary and Job
 salary_job = Table(
     "salary_job",
     Base.metadata,
-    Column("salary_id", Integer, ForeignKey("salaries.id")),
-    Column("job_id", Integer, ForeignKey("jobs.id")),
+    Column(
+        "salary_id",
+        Integer,
+        ForeignKey("salaries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "job_id", Integer, ForeignKey("jobs.id", ondelete="CASCADE"), primary_key=True
+    ),
 )
 # Association table for many-to-many relationship between Company and Tag
 company_tag = Table(
     "company_tag",
     Base.metadata,
-    Column("company_id", Integer, ForeignKey("companies.id")),
-    Column("tag_id", Integer, ForeignKey("tags.id")),
+    Column(
+        "company_id",
+        Integer,
+        ForeignKey("companies.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True
+    ),
 )

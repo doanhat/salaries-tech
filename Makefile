@@ -9,7 +9,7 @@ REGION := europe-west1  # Default region, can be overridden in .env
 CAPTCHA_KEY := 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI # Google public site key for testing
 LOCAL_BACKEND_URL := http://localhost:8000
 LOCAL_FRONTEND_URL := http://localhost:3000
-LOCAL_SQLALCHEMY_DATABASE_URL := sqlite:///./salaries.db
+LOCAL_SQLALCHEMY_DATABASE_URL := postgresql://postgres:postgres@localhost:5432/salaries_db
 FIREBASE_SITE_NAME := salaries-tech
 API_KEY_SECRET_NAME := salaries-api-key
 EMAIL_VERIFICATION_SECRET_NAME := salaries-email-verification
@@ -79,18 +79,18 @@ test-frontend:
 
 # Database
 .PHONY: sync
-sync: install-backend ## Sync data from API
+sync: install-backend ## Sync data from API # TODO: Update to use Postgres
 	## delete the existing db
 	rm -f backend/salaries_dev_data.db backend/salaries_dev_data.db-client_wal_index backend/salaries_dev_data.db-shm backend/salaries_dev_data.db-wal
 	python -m backend.sync.populate_db
 
 .PHONY: create-dev-data
-create-dev-data:
+create-dev-data: # TODO: Update to use Postgres
 	rm -f backend/salaries_dev_data.db backend/salaries_dev_data.db-* && \
 	turso db shell salaries .dump > dump.sql && cat dump.sql | sqlite3 backend/salaries_dev_data.db 
 
 .PHONY: replace-db
-replace-db:
+replace-db: # TODO: Update to use Postgres
 	@echo "Replacing salaries.db with salaries_dev_data.db..."
 	@if [ -f backend/salaries_dev_data.db ]; then \
 		pkill -f "salaries.db" 2>/dev/null || true && \
