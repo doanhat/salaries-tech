@@ -7199,5 +7199,108 @@
     "company_xp": 4,
     "total_xp": 5,
     "remote": null
+  },
+  {
+    "company": "Zenika",
+    "title": "Architect Solution",
+    "location": "Nantes",
+    "compensation": 58000,
+    "date": "2024-11-05T00:00:00.000Z",
+    "level": "Senior",
+    "company_xp": 7,
+    "total_xp": 16,
+    "remote": {
+      "variant": "partial",
+      "dayCount": 3,
+      "base": "week",
+      "location": "office"
+    }
+  },
+  {
+    "company": "SII",
+    "title": "Software engineer C/C++",
+    "location": "Ile de france",
+    "compensation": 41000,
+    "date": "2024-11-04T00:00:00.000Z",
+    "level": "Junior",
+    "company_xp": 1,
+    "total_xp": 1,
+    "remote": {
+      "variant": "none"
+    }
+  },
+  {
+    "company": "PME",
+    "title": "Developpeur Fullstack",
+    "location": "Dijon",
+    "compensation": 30000,
+    "date": "2024-11-04T00:00:00.000Z",
+    "level": "Junior",
+    "company_xp": 3,
+    "total_xp": 4,
+    "remote": {
+      "variant": "full"
+    }
+  },
+  {
+    "company": "ASTEK",
+    "title": "D\u00e9veloppeur Full-Stack",
+    "location": "Toulouse",
+    "compensation": 48000,
+    "date": "2024-11-04T00:00:00.000Z",
+    "level": "Senior",
+    "company_xp": 1,
+    "total_xp": 10,
+    "remote": {
+      "variant": "partial",
+      "dayCount": 2,
+      "base": "week",
+      "location": "remote"
+    }
+  },
+  {
+    "company": "Smile",
+    "title": "Lead Tech",
+    "location": "Nantes",
+    "compensation": 40700,
+    "date": "2024-11-03T00:00:00.000Z",
+    "level": "Mid",
+    "company_xp": 4,
+    "total_xp": 4,
+    "remote": {
+      "variant": "partial",
+      "dayCount": 2,
+      "base": "week",
+      "location": "remote"
+    }
+  },
+  {
+    "company": "BPCE-SI",
+    "title": "Ing\u00e9nieur DevOps",
+    "location": "Nantes",
+    "compensation": 57000,
+    "date": "2024-10-31T00:00:00.000Z",
+    "level": "Senior",
+    "company_xp": 11,
+    "total_xp": 19,
+    "remote": {
+      "variant": "partial",
+      "dayCount": 3,
+      "base": "week",
+      "location": "remote"
+    }
+  },
+  {
+    "company": "Edicia",
+    "title": "Software Engineer",
+    "location": "Nantes",
+    "compensation": 42000,
+    "date": "2024-10-29T00:00:00.000Z",
+    "level": "Mid",
+    "company_xp": 1,
+    "total_xp": 3,
+    "remote": {
+      "variant": "full"
+    }
   }
 ]

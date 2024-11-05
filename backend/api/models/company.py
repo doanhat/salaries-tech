@@ -11,7 +11,7 @@ from . import CompanyType, company_tag
 class TagDB(Base):
     __tablename__ = "tags"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
     companies = relationship("CompanyDB", secondary=company_tag, back_populates="tags")
 
@@ -19,7 +19,7 @@ class TagDB(Base):
 class CompanyDB(Base):
     __tablename__ = "companies"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String, unique=True, nullable=True)
     type = Column(String, nullable=True)
     tags = relationship("TagDB", secondary=company_tag, back_populates="companies")

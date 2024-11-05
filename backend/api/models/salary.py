@@ -23,7 +23,7 @@ from .technical_stack import TechnicalStack
 class SalaryDB(Base):
     __tablename__ = "salaries"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
     location = Column(String, nullable=False)
     net_salary = Column(Float, nullable=True)

@@ -1,7 +1,6 @@
 PACKAGE := backend/api
 PACKAGES := $(PACKAGE) backend/tests
 FAILURES := .pytest_cache/v/cache/lastfailed
-# Variables
 PROJECT_ID := salaries-438922
 IMAGE_NAME := salary-backend
 GCR_IMAGE := gcr.io/$(PROJECT_ID)/$(IMAGE_NAME)
@@ -80,30 +79,21 @@ test-frontend:
 # Database
 .PHONY: sync
 sync: install-backend ## Sync data from API # TODO: Update to use Postgres
-	## delete the existing db
-	rm -f backend/salaries_dev_data.db backend/salaries_dev_data.db-client_wal_index backend/salaries_dev_data.db-shm backend/salaries_dev_data.db-wal
 	python -m backend.sync.populate_db
 
-.PHONY: create-dev-data
-create-dev-data: # TODO: Update to use Postgres
-	rm -f backend/salaries_dev_data.db backend/salaries_dev_data.db-* && \
-	turso db shell salaries .dump > dump.sql && cat dump.sql | sqlite3 backend/salaries_dev_data.db 
-
-.PHONY: replace-db
-replace-db: # TODO: Update to use Postgres
-	@echo "Replacing salaries.db with salaries_dev_data.db..."
-	@if [ -f backend/salaries_dev_data.db ]; then \
-		pkill -f "salaries.db" 2>/dev/null || true && \
-		rm -f backend/salaries.db* backend/salaries_dev_data.db-* && \
-		sqlite3 backend/salaries_dev_data.db "PRAGMA wal_checkpoint(FULL);" && \
-		sqlite3 backend/salaries_dev_data.db ".backup 'backend/salaries.db'" && \
-		echo "Database replaced successfully."; \
-	else \
-		echo "Error: salaries_dev_data.db not found in backend/" && \
-		exit 1; \
-	fi
-
 # Targets for local development
+.PHONY: set-up-database set-up-database-with-init
+set-up-database:
+	echo "Stopping database..." && \
+	docker-compose down && \
+	echo "Starting database..." && \
+	docker-compose up -d
+
+set-up-database-with-init: set-up-database
+	echo "Setting up database..." && \
+	docker cp dump.sql postgres-container:/dump.sql && \
+	docker exec postgres-container psql -U postgres -d salaries_db -f /dump.sql
+
 .PHONY: set-local-env
 set-local-env:
 	@echo "Setting local environment variables..."
@@ -176,7 +166,7 @@ set-local-env:
 	fi
 
 .PHONY: run-local
-run-local: set-local-env replace-db
+run-local: set-local-env
 	@echo "Starting backend and frontend..."
 	@trap 'kill %1; kill %2' SIGINT; \
 	(cd backend && poetry run uvicorn api.main:app --reload) & \
@@ -192,9 +182,6 @@ cleanup:
 	@lsof -ti:8000 | xargs kill -9 || true
 
 # Targets for deployment
-.PHONY: deploy
-deploy: deploy-backend get-backend-url deploy-frontend get-frontend-url update-backend-env
-
 enable-apis:
 	@echo "Enabling necessary APIs..."
 	gcloud services enable cloudbuild.googleapis.com run.googleapis.com
