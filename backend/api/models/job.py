@@ -11,7 +11,7 @@ from . import salary_job
 class JobDB(Base):
     __tablename__ = "jobs"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String, unique=True, nullable=False)
     salaries = relationship("SalaryDB", secondary=salary_job, back_populates="jobs")
 

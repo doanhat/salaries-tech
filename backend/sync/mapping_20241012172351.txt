@@ -807,3 +807,5 @@ Sophiagenetics - Scale-up (HealthTech)
 Ubika - SME (Tech)
 
 CircularX - Scale-up (GreenTech)
+
+BPCE-SI - Large-enterprise (Banking)
