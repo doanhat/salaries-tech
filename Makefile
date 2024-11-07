@@ -177,7 +177,7 @@ set-local-env:
 	fi
 
 .PHONY: run-local
-run-local: set-local-env
+run-local: set-up-database-with-init set-local-env
 	@echo "Starting backend and frontend..."
 	@trap 'kill %1; kill %2' SIGINT; \
 	(cd backend && poetry run uvicorn api.main:app --reload) & \
@@ -191,6 +191,7 @@ cleanup:
 	@pkill -f "react-scripts start" || true
 	@lsof -ti:3000 | xargs kill -9 || true
 	@lsof -ti:8000 | xargs kill -9 || true
+	@docker-compose down || true
 
 # Targets for deployment
 enable-apis:

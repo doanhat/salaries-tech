@@ -9,7 +9,7 @@ This project consists of a backend API and a frontend application for managing a
 - Node.js and npm
 - Google Cloud SDK (gcloud CLI)
 - Firebase CLI
-- Turso CLI
+- Supabase CLI
 - Make
 
 ## Setup
@@ -31,9 +31,9 @@ This project consists of a backend API and a frontend application for managing a
 To run the project locally:
 
 1. To run separately backend and frontend:
-   - Copy the dev database to the main database:
+   - Setup the database with development data:
      ```bash
-     make replace-db
+     make set-up-database-with-init
      ```
    - Initialize the backend and frontend environments:
      ```bash
@@ -76,25 +76,21 @@ make format-frontend  # Format code with Prettier
 make test-frontend   # Run tests
 ```
 
-## Database Management (need Turso database token)
+## Database Management (need Supabase database credentials)
 
-- Sync data from API:
+- CLI program to sync data from API:
   ```bash
   make sync
   ```
 
-- Create development data:
+- Create development Postgres database with development data:
   ```bash
-  make create-dev-data
-  ```
-
-- Replace the main database with development data:
-  ```bash   
-  make replace-db
+  make set-up-database-with-init
   ```
 
 ## Project Structure
 
+- `alembic/`: Contains Alembic migrations
 - `backend/`: Contains the FastAPI backend application
 - `frontend/`: Contains the React frontend application
 - `Makefile`: Contains various commands for development and deployment
@@ -106,7 +102,8 @@ make test-frontend   # Run tests
 - `REGION`: Google Cloud region (default: europe-west1)
 - `CAPTCHA_KEY`: Google reCAPTCHA site key
 - `LOCAL_FRONTEND_URL`: Frontend URL (default: http://localhost:3000)
-- `LOCAL_SQLALCHEMY_DATABASE_URL`: SQLite database URL
+- `LOCAL_SQLALCHEMY_DATABASE_URL`: Postgres database URL
+- `LOCAL_CACHE_DATABASE_URL`: SQLite database URL for Cache
 - `API_KEY_SECRET_NAME`: Secret name for API key
 - `EMAIL_VERIFICATION_SECRET_NAME`: Secret name for email verification
 - `SENDGRID_FROM_EMAIL`: SendGrid sender email
@@ -126,10 +123,15 @@ make test-frontend   # Run tests
 
 ```
 .
+├── alembic/           # Alembic migrations
 ├── backend/           # FastAPI backend application
-├── frontend/         # React frontend application
-├── Makefile         # Build and deployment commands
-├── poetry.lock      # Python dependencies lock file
-└── pyproject.toml   # Python project configuration
+├── frontend/          # React frontend application
+├── docker-compose.yml # Docker compose file for Postgres
+├── Dockerfile         # Dockerfile for backend
+├── dump.sql           # Database dump file
+├── firebase.json      # Firebase configuration
+├── Makefile           # Build and deployment commands
+├── poetry.lock        # Poetry dependencies lock file
+├── pyproject.toml     # Python project configuration
 ```
 
