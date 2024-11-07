@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.api.database import refresh_cache_table
 from backend.api.models import (
     CompanyType,
     EmailVerificationStatus,
@@ -248,7 +249,7 @@ def test_get_location_stats(client, test_db):
     assert values == sorted(values, reverse=True)
 
 
-def test_get_top_locations_by_salary(client, test_db):
+def test_get_top_locations_by_salary(client, test_db, test_cache_db):
     # Create some test data
     locations = ["New York", "San Francisco", "London", "Berlin", "Tokyo"]
     salaries = [80000, 90000, 70000, 75000, 85000]
@@ -264,6 +265,7 @@ def test_get_top_locations_by_salary(client, test_db):
             )
             test_db.add(salary)
     test_db.commit()
+    refresh_cache_table(SalaryDB)
 
     response = client.get("/salaries/top-locations-by-salary/")
     assert response.status_code == 200

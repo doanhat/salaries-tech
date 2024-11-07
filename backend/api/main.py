@@ -6,6 +6,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.security import APIKeyHeader
 
 from .config.env import ALLOWED_ORIGINS
+from .database import init_cache_db
 from .routes import commons, companies, jobs, root, salaries, technical_stacks
 from .services.auth import verify_api_key
 
@@ -65,6 +66,9 @@ app.add_middleware(
 
 # Type for dependencies
 APIKey = Annotated[str, Security(api_key_scheme)]
+
+# Initialize cache database
+init_cache_db()
 
 # Include routers with API key dependency
 app.include_router(root.router)

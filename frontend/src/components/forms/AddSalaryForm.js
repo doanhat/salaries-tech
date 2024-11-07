@@ -460,6 +460,7 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   <Form.Label>{t.entities.company.type.singular}</Form.Label>
                   <Select
                     isClearable
+                    isRequired={isNewCompany}
                     onChange={(option) =>
                       handleSelectChange("company_type", option)
                     }
@@ -474,7 +475,13 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                         : null
                     }
                     placeholder={t.entities.info.select}
+                    isInvalid={!!errors.company_type}
                   />
+                  {errors.company_type && (
+                    <Form.Text className="text-danger">
+                      {errors.company_type}
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -782,6 +789,9 @@ const AddSalaryForm = ({ show, handleClose, onSalaryAdded, choices }) => {
                   onChange={handleInputChange}
                   isInvalid={!!errors.professional_email}
                 />
+                <Form.Text className="text-muted">
+                  {t.entities.professional_email.help}
+                </Form.Text>
                 <Form.Control.Feedback type="invalid">
                   {errors.professional_email}
                 </Form.Control.Feedback>

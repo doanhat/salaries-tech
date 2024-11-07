@@ -62,10 +62,15 @@ DROP INDEX IF EXISTS "public"."ix_jobs_id";
 DROP INDEX IF EXISTS "public"."ix_companies_id";
 DROP INDEX IF EXISTS "public"."idx_salary_technical_stack_composite";
 DROP INDEX IF EXISTS "public"."idx_salary_job_composite";
+DROP INDEX IF EXISTS "public"."idx_salaries_net_salary_desc";
+DROP INDEX IF EXISTS "public"."idx_salaries_location_salary";
+DROP INDEX IF EXISTS "public"."idx_salaries_gross_salary_desc";
+DROP INDEX IF EXISTS "public"."idx_salaries_experience_salary";
 DROP INDEX IF EXISTS "public"."idx_salaries_experience";
 DROP INDEX IF EXISTS "public"."idx_salaries_covering";
 DROP INDEX IF EXISTS "public"."idx_salaries_composite_2";
 DROP INDEX IF EXISTS "public"."idx_salaries_composite_1";
+DROP INDEX IF EXISTS "public"."idx_salaries_added_date_desc";
 DROP INDEX IF EXISTS "public"."idx_jobs_title_gin";
 DROP INDEX IF EXISTS "public"."idx_company_tag_composite";
 DROP INDEX IF EXISTS "public"."idx_companies_name_gin";
@@ -151,6 +156,11 @@ ALTER TABLE IF EXISTS ONLY "auth"."flow_state" DROP CONSTRAINT IF EXISTS "flow_s
 ALTER TABLE IF EXISTS ONLY "auth"."audit_log_entries" DROP CONSTRAINT IF EXISTS "audit_log_entries_pkey";
 ALTER TABLE IF EXISTS ONLY "auth"."mfa_amr_claims" DROP CONSTRAINT IF EXISTS "amr_id_pk";
 ALTER TABLE IF EXISTS "realtime"."messages" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE IF EXISTS "public"."technical_stacks" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE IF EXISTS "public"."tags" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE IF EXISTS "public"."salaries" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE IF EXISTS "public"."jobs" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE IF EXISTS "public"."companies" ALTER COLUMN "id" DROP DEFAULT;
 ALTER TABLE IF EXISTS "auth"."refresh_tokens" ALTER COLUMN "id" DROP DEFAULT;
 DROP VIEW IF EXISTS "vault"."decrypted_secrets";
 DROP TABLE IF EXISTS "supabase_migrations"."seed_files";
@@ -164,13 +174,18 @@ DROP TABLE IF EXISTS "realtime"."subscription";
 DROP TABLE IF EXISTS "realtime"."schema_migrations";
 DROP SEQUENCE IF EXISTS "realtime"."messages_id_seq";
 DROP TABLE IF EXISTS "realtime"."messages";
+DROP SEQUENCE IF EXISTS "public"."technical_stacks_id_seq";
 DROP TABLE IF EXISTS "public"."technical_stacks";
+DROP SEQUENCE IF EXISTS "public"."tags_id_seq";
 DROP TABLE IF EXISTS "public"."tags";
 DROP TABLE IF EXISTS "public"."salary_technical_stack";
 DROP TABLE IF EXISTS "public"."salary_job";
+DROP SEQUENCE IF EXISTS "public"."salaries_id_seq";
 DROP TABLE IF EXISTS "public"."salaries";
+DROP SEQUENCE IF EXISTS "public"."jobs_id_seq";
 DROP TABLE IF EXISTS "public"."jobs";
 DROP TABLE IF EXISTS "public"."company_tag";
+DROP SEQUENCE IF EXISTS "public"."companies_id_seq";
 DROP TABLE IF EXISTS "public"."companies";
 DROP TABLE IF EXISTS "public"."alembic_version";
 DROP TABLE IF EXISTS "auth"."users";
@@ -2366,6 +2381,25 @@ CREATE TABLE "public"."companies" (
 
 
 --
+-- Name: companies_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "public"."companies_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: companies_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "public"."companies_id_seq" OWNED BY "public"."companies"."id";
+
+
+--
 -- Name: company_tag; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2383,6 +2417,25 @@ CREATE TABLE "public"."jobs" (
     "id" integer NOT NULL,
     "title" character varying NOT NULL
 );
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "public"."jobs_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "public"."jobs_id_seq" OWNED BY "public"."jobs"."id";
 
 
 --
@@ -2406,6 +2459,25 @@ CREATE TABLE "public"."salaries" (
     "email_domain" character varying,
     "verification" character varying
 );
+
+
+--
+-- Name: salaries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "public"."salaries_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: salaries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "public"."salaries_id_seq" OWNED BY "public"."salaries"."id";
 
 
 --
@@ -2439,6 +2511,25 @@ CREATE TABLE "public"."tags" (
 
 
 --
+-- Name: tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "public"."tags_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "public"."tags_id_seq" OWNED BY "public"."tags"."id";
+
+
+--
 -- Name: technical_stacks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2446,6 +2537,25 @@ CREATE TABLE "public"."technical_stacks" (
     "id" integer NOT NULL,
     "name" character varying NOT NULL
 );
+
+
+--
+-- Name: technical_stacks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "public"."technical_stacks_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: technical_stacks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "public"."technical_stacks_id_seq" OWNED BY "public"."technical_stacks"."id";
 
 
 --
@@ -2675,6 +2785,41 @@ ALTER TABLE ONLY "auth"."refresh_tokens" ALTER COLUMN "id" SET DEFAULT "nextval"
 
 
 --
+-- Name: companies id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."companies" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."companies_id_seq"'::"regclass");
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."jobs" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."jobs_id_seq"'::"regclass");
+
+
+--
+-- Name: salaries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."salaries" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."salaries_id_seq"'::"regclass");
+
+
+--
+-- Name: tags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."tags" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."tags_id_seq"'::"regclass");
+
+
+--
+-- Name: technical_stacks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."technical_stacks" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."technical_stacks_id_seq"'::"regclass");
+
+
+--
 -- Name: messages id; Type: DEFAULT; Schema: realtime; Owner: -
 --
 
@@ -2883,7 +3028,7 @@ COPY "pgsodium"."key" ("id", "status", "created", "expires", "key_type", "key_id
 --
 
 COPY "public"."alembic_version" ("version_num") FROM stdin;
-61949985718c
+fecdac2bb7ef
 \.
 
 
@@ -3223,6 +3368,7 @@ COPY "public"."companies" ("id", "name", "type") FROM stdin;
 343	Canal Plus	large-enterprise
 344	Sogelink	large-enterprise
 345	BPCE-IT	large-enterprise
+346	Smile	sme
 \.
 
 
@@ -5632,6 +5778,12 @@ COPY "public"."salaries" ("id", "company_id", "location", "net_salary", "gross_s
 647	342	nantes	\N	42000	\N	\N	1	3	mid	remote	2024-10-29	\N	\N	verified
 648	344	nantes	\N	38000	\N	male	0	3	mid	hybrid	2024-11-04	\N	\N	no
 649	345	paris	\N	70000	\N	male	6	14	senior	hybrid	2024-11-04	\N	\N	no
+651	24	nantes	\N	58000	\N	\N	7	16	senior	hybrid	2024-11-05	\N	\N	verified
+652	265	ile-de-france	\N	41000	\N	\N	1	1	junior	hybrid	2024-11-04	\N	\N	verified
+654	\N	dijon	\N	30000	\N	\N	3	4	junior	remote	2024-11-04	\N	\N	verified
+655	282	toulouse	\N	48000	\N	\N	1	10	senior	hybrid	2024-11-04	\N	\N	verified
+656	346	nantes	\N	40700	\N	\N	4	4	mid	hybrid	2024-11-03	\N	\N	verified
+657	42	nantes	\N	57000	\N	\N	11	19	senior	hybrid	2024-10-31	\N	\N	verified
 \.
 
 
@@ -5875,7 +6027,6 @@ COPY "public"."salary_job" ("salary_id", "job_id") FROM stdin;
 84	80
 84	42
 136	42
-136	42
 198	5
 198	32
 642	80
@@ -5887,6 +6038,12 @@ COPY "public"."salary_job" ("salary_id", "job_id") FROM stdin;
 648	1
 648	6
 649	42
+651	39
+652	1
+654	6
+655	6
+656	32
+657	4
 \.
 
 
@@ -5932,6 +6089,8 @@ COPY "public"."salary_technical_stack" ("salary_id", "technical_stack_id") FROM 
 187	14
 648	18
 648	19
+652	13
+652	10
 \.
 
 
@@ -6492,6 +6651,41 @@ SELECT pg_catalog.setval('"auth"."refresh_tokens_id_seq"', 1, false);
 --
 
 SELECT pg_catalog.setval('"pgsodium"."key_key_id_seq"', 1, false);
+
+
+--
+-- Name: companies_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('"public"."companies_id_seq"', 346, true);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('"public"."jobs_id_seq"', 111, true);
+
+
+--
+-- Name: salaries_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('"public"."salaries_id_seq"', 657, true);
+
+
+--
+-- Name: tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('"public"."tags_id_seq"', 349, true);
+
+
+--
+-- Name: technical_stacks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('"public"."technical_stacks_id_seq"', 19, true);
 
 
 --
@@ -7154,6 +7348,13 @@ CREATE INDEX "idx_jobs_title_gin" ON "public"."jobs" USING "gin" ("title" "publi
 
 
 --
+-- Name: idx_salaries_added_date_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "idx_salaries_added_date_desc" ON "public"."salaries" USING "btree" ("added_date" DESC);
+
+
+--
 -- Name: idx_salaries_composite_1; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7179,6 +7380,34 @@ CREATE INDEX "idx_salaries_covering" ON "public"."salaries" USING "btree" ("id",
 --
 
 CREATE INDEX "idx_salaries_experience" ON "public"."salaries" USING "btree" ("total_experience_years", "experience_years_company");
+
+
+--
+-- Name: idx_salaries_experience_salary; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "idx_salaries_experience_salary" ON "public"."salaries" USING "btree" ("total_experience_years", "gross_salary", "net_salary");
+
+
+--
+-- Name: idx_salaries_gross_salary_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "idx_salaries_gross_salary_desc" ON "public"."salaries" USING "btree" ("gross_salary" DESC);
+
+
+--
+-- Name: idx_salaries_location_salary; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "idx_salaries_location_salary" ON "public"."salaries" USING "btree" ("location", "gross_salary", "net_salary");
+
+
+--
+-- Name: idx_salaries_net_salary_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "idx_salaries_net_salary_desc" ON "public"."salaries" USING "btree" ("net_salary" DESC);
 
 
 --

@@ -139,5 +139,6 @@ backend/salaries.db
 *.db-wal
 *.db-client_wal_index
 backend/test.db
-
+backend/cache.db
+backend/test_cache.db
 commands.txt

@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..database import get_db_session
+from ..database import get_db_session, refresh_cache_table
+from ..models import salary_technical_stack
 from ..models.technical_stack import TechnicalStack, TechnicalStackDB
 
 router = APIRouter(prefix="/technical-stacks", tags=["technical-stacks"])
@@ -17,7 +18,7 @@ async def create_technical_stack(
     db_stack = TechnicalStackDB(name=stack.name)
     db.add(db_stack)
     db.commit()
-    db.refresh(db_stack)
+    refresh_cache_table(TechnicalStackDB)
     return TechnicalStack(
         **{t.name: getattr(db_stack, t.name) for t in db_stack.__table__.columns}
     )
@@ -25,7 +26,7 @@ async def create_technical_stack(
 
 @router.get("/", response_model=Dict[str, List[TechnicalStack] | int])
 async def get_technical_stacks(
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(lambda: next(get_db_session(is_cache=True))),
 ) -> Dict[str, List[TechnicalStack] | int]:
     stacks = db.query(TechnicalStackDB).all()
     return {
@@ -58,6 +59,8 @@ async def delete_technical_stacks(
     for stack in stacks:
         db.delete(stack)
     db.commit()
+    refresh_cache_table(TechnicalStackDB)
+    refresh_cache_table(salary_technical_stack)
     return {
         "message": f"Technical stacks with IDs {stack_ids} have been deleted successfully"
     }
@@ -65,7 +68,7 @@ async def delete_technical_stacks(
 
 @router.get("/check-name/", response_model=Dict[str, bool])
 async def check_technical_stack(
-    name: str, db: Session = Depends(get_db_session)
+    name: str, db: Session = Depends(lambda: next(get_db_session(is_cache=True)))
 ) -> Dict[str, bool]:
     stack = (
         db.query(TechnicalStackDB)

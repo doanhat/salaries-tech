@@ -18,7 +18,7 @@ router = APIRouter(tags=["commons"])
 
 @router.get("/choices/", response_model=Dict[str, List[str]])
 async def get_choices(
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(lambda: next(get_db_session(is_cache=True))),
 ) -> Dict[str, List[str]]:
     try:
         company_names = db.query(CompanyDB.name).distinct().all()

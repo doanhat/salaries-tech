@@ -16,8 +16,13 @@ from sqlalchemy import asc, delete, desc, func
 from sqlalchemy.orm import Session
 
 from ..config.logger import logger
-from ..database import get_db_session
-from ..models import EmailVerificationStatus, salary_job, salary_technical_stack
+from ..database import get_db_session, refresh_cache_table
+from ..models import (
+    EmailVerificationStatus,
+    company_tag,
+    salary_job,
+    salary_technical_stack,
+)
 from ..models.company import Company, CompanyDB, Tag, TagDB
 from ..models.job import Job, JobDB
 from ..models.salary import EmailBody, Salary, SalaryDB
@@ -87,8 +92,10 @@ async def create_salary(
                 .first()
             )
             if not db_company:
+                logger.info(f"Company Type: {salary.company.type}")
                 db_company = CompanyDB(
-                    name=salary.company.name, type=salary.company.type
+                    name=salary.company.name,
+                    type=salary.company.type if salary.company.type else None,
                 )
                 # Handle company tags
                 if salary.company.tags:
@@ -132,6 +139,14 @@ async def create_salary(
                 db_salary.technical_stacks.append(db_stack)
 
         db.commit()
+        refresh_cache_table(TagDB)
+        refresh_cache_table(CompanyDB)
+        refresh_cache_table(company_tag)
+        refresh_cache_table(JobDB)
+        refresh_cache_table(TechnicalStackDB)
+        refresh_cache_table(SalaryDB)
+        refresh_cache_table(salary_job)
+        refresh_cache_table(salary_technical_stack)
         db.refresh(db_salary)
 
         created_salary = Salary(
@@ -186,7 +201,7 @@ async def create_salary(
 
 @router.get("/", response_model=Dict[str, List[Salary] | int])
 async def get_salaries(
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(lambda: next(get_db_session(is_cache=True))),
     skip: int = 0,
     limit: int = 50,
     sort_by: str = "added_date",
@@ -512,7 +527,9 @@ async def delete_salaries(
             db.delete(salary)
 
         db.commit()
-
+        refresh_cache_table(SalaryDB)
+        refresh_cache_table(salary_job)
+        refresh_cache_table(salary_technical_stack)
         return {
             "message": f"Salaries with IDs {salary_ids} have been deleted successfully"
         }
@@ -529,7 +546,7 @@ async def delete_salaries(
 
 @router.get("/check-location/", response_model=Dict[str, bool])
 async def check_location(
-    name: str, db: Session = Depends(get_db_session)
+    name: str, db: Session = Depends(lambda: next(get_db_session(is_cache=True)))
 ) -> Dict[str, bool]:
     location = (
         db.query(SalaryDB).filter(SalaryDB.location == name.lower().strip()).first()
@@ -539,7 +556,7 @@ async def check_location(
 
 @router.get("/location-stats/", response_model=Dict[str, List[Dict[str, Any]]])
 async def get_location_stats(
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(lambda: next(get_db_session(is_cache=True))),
 ) -> Dict[str, List[Dict[str, Any]]]:
     try:
         total_salaries = db.query(SalaryDB).count()
@@ -591,7 +608,7 @@ async def get_location_stats(
 
 @router.get("/top-locations-by-salary/", response_model=List[Dict[str, Any]])
 async def get_top_locations_by_salary(
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(lambda: next(get_db_session(is_cache=True))),
 ) -> List[Dict[str, Any]]:
     try:
         # Query to get top 10 locations by average salary
@@ -645,7 +662,7 @@ async def verify_email(
 
         setattr(salary, "verification", EmailVerificationStatus.VERIFIED.value)
         db.commit()
-
+        refresh_cache_table(SalaryDB)
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

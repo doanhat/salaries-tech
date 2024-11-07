@@ -89,7 +89,14 @@ set-up-database:
 	echo "Starting database..." && \
 	docker-compose up -d
 
-set-up-database-with-init: set-up-database
+set-up-database-with-init:
+	echo "Stopping database..." && \
+	docker-compose down && \
+	echo "Deleting old volumes..." && \
+	docker volume rm salaries_postgres_data && \
+	echo "Starting database..." && \
+	docker-compose up -d && \
+	sleep 4 && \
 	echo "Setting up database..." && \
 	docker cp dump.sql postgres-container:/dump.sql && \
 	docker exec postgres-container psql -U postgres -d salaries_db -f /dump.sql

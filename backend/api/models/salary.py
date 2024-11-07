@@ -6,8 +6,7 @@ from sqlalchemy import CheckConstraint, Column, Date, Float, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from ..database import Base
-from ..services.email import check_domain_company_match
-from . import (
+from ..models import (
     EmailVerificationStatus,
     Gender,
     Level,
@@ -15,6 +14,7 @@ from . import (
     salary_job,
     salary_technical_stack,
 )
+from ..services.email import check_domain_company_match
 from .company import Company
 from .job import Job
 from .technical_stack import TechnicalStack
