@@ -9,8 +9,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import close_all_sessions, sessionmaker
 
-from backend.api.database import Base, get_db_session
+from backend.api.database import Base, get_db_session, refresh_cache_table
 from backend.api.main import app
+from backend.api.models import company_tag, salary_job, salary_technical_stack
 from backend.api.models.company import CompanyDB, TagDB
 from backend.api.models.job import JobDB
 from backend.api.models.salary import SalaryDB
@@ -21,9 +22,6 @@ backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 # Add the backend directory to the Python path
 sys.path.insert(0, backend_dir)
-
-# Create the database URL
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{os.path.join(backend_dir, 'test.db')}"
 # Set the environment to test
 os.environ["ENV"] = "test"
 
@@ -32,8 +30,16 @@ os.environ["ENV"] = "test"
 @pytest.fixture(scope="module")
 def test_engine():
     engine = create_engine(
-        SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+        os.getenv("SQLALCHEMY_DATABASE_URL"), connect_args={"check_same_thread": False}
     )
+    Base.metadata.create_all(bind=engine)
+    yield engine
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(scope="module")
+def test_cache_engine():
+    engine = create_engine(os.getenv("SQLALCHEMY_CACHE_DATABASE_URL"))
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
@@ -52,18 +58,36 @@ def test_db_session(test_engine):
 
 
 @pytest.fixture(scope="function")
+def test_cache_db_session(test_cache_engine):
+    TestingCacheSessionLocal = sessionmaker(
+        autocommit=False, autoflush=False, bind=test_cache_engine
+    )
+    db = TestingCacheSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@pytest.fixture(scope="function")
 def test_db(test_db_session):
     yield test_db_session
     test_db_session.rollback()
 
 
 @pytest.fixture(scope="function")
-def override_get_db(test_db_session):
-    def _override_get_db():
+def test_cache_db(test_cache_db_session):
+    yield test_cache_db_session
+    test_cache_db_session.rollback()
+
+
+@pytest.fixture(scope="function")
+def override_get_db(test_db_session, test_cache_db_session):
+    def _override_get_db(is_cache: bool = False):
         try:
-            yield test_db_session
+            yield test_cache_db_session if is_cache else test_db_session
         finally:
-            test_db_session.close()
+            test_cache_db_session.close() if is_cache else test_db_session.close()
 
     return _override_get_db
 
@@ -71,7 +95,6 @@ def override_get_db(test_db_session):
 @pytest.fixture(autouse=True, scope="function")
 def reset_db(test_db, test_engine):
     yield
-    # This code runs after each test function
     close_all_sessions()
     Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)
@@ -154,7 +177,14 @@ def sample_data(test_db):
     salary.jobs.append(job)
     test_db.add(salary)
     test_db.commit()
-
+    refresh_cache_table(TagDB)
+    refresh_cache_table(CompanyDB)
+    refresh_cache_table(company_tag)
+    refresh_cache_table(JobDB)
+    refresh_cache_table(TechnicalStackDB)
+    refresh_cache_table(SalaryDB)
+    refresh_cache_table(salary_job)
+    refresh_cache_table(salary_technical_stack)
     return {
         "salary": salary,
         "company": company,

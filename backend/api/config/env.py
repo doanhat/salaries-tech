@@ -15,6 +15,10 @@ SQLALCHEMY_DATABASE_URL = os.getenv(
     "SQLALCHEMY_DATABASE_URL",
     "postgresql://postgres:postgres@localhost:5432/salaries_db",
 )
+SQLALCHEMY_CACHE_DATABASE_URL = os.getenv(
+    "SQLALCHEMY_CACHE_DATABASE_URL",
+    "sqlite:///./cache.db",
+)
 API_KEY_SECRET_NAME = os.getenv("API_KEY_SECRET_NAME")
 PROJECT_ID = os.getenv("PROJECT_ID")
 RECAPTCHA_KEY = os.getenv("RECAPTCHA_KEY")

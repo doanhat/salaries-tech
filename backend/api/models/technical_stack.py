@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
 from ..database import Base
-from . import salary_technical_stack
+from ..models import salary_technical_stack
 
 
 class TechnicalStackDB(Base):

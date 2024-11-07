@@ -5,7 +5,7 @@ from sqlalchemy import delete, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..database import get_db_session
+from ..database import get_db_session, refresh_cache_table
 from ..models import company_tag
 from ..models.company import Company, CompanyDB, Tag, TagDB
 
@@ -34,6 +34,9 @@ async def create_company(
     db.add(db_company)
     try:
         db.commit()
+        refresh_cache_table(CompanyDB)
+        refresh_cache_table(TagDB)
+        refresh_cache_table(company_tag)
         db.refresh(db_company)
         return Company(
             **{
@@ -51,7 +54,9 @@ async def create_company(
 
 @router.get("/", response_model=Dict[str, List[Company] | int])
 async def get_companies(
-    db: Session = Depends(get_db_session), limit: int = 50, skip: int = 0
+    db: Session = Depends(lambda: next(get_db_session(is_cache=True))),
+    limit: int = 50,
+    skip: int = 0,
 ) -> Dict[str, List[Company] | int]:
     results = db.query(CompanyDB).offset(skip).limit(limit).all()
     total = db.query(CompanyDB).count()
@@ -89,6 +94,8 @@ async def delete_companies(
     for company in companies:
         db.delete(company)
     db.commit()
+    refresh_cache_table(CompanyDB)
+    refresh_cache_table(company_tag)
     return {
         "message": f"Companies with IDs {company_ids} have been deleted successfully"
     }
@@ -96,7 +103,7 @@ async def delete_companies(
 
 @router.get("/check-name/", response_model=Dict[str, bool])
 async def check_company_name(
-    name: str, db: Session = Depends(get_db_session)
+    name: str, db: Session = Depends(lambda: next(get_db_session(is_cache=True)))
 ) -> Dict[str, bool]:
     company = db.query(CompanyDB).filter(CompanyDB.name == name.strip()).first()
     return {"exists": company is not None}
@@ -104,7 +111,7 @@ async def check_company_name(
 
 @router.get("/check-tag/", response_model=Dict[str, bool])
 async def check_company_tag(
-    name: str, db: Session = Depends(get_db_session)
+    name: str, db: Session = Depends(lambda: next(get_db_session(is_cache=True)))
 ) -> Dict[str, bool]:
     tag = db.query(TagDB).filter(TagDB.name == name.lower().strip()).first()
     return {"exists": tag is not None}

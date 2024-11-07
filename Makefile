@@ -9,6 +9,7 @@ CAPTCHA_KEY := 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI # Google public site key
 LOCAL_BACKEND_URL := http://localhost:8000
 LOCAL_FRONTEND_URL := http://localhost:3000
 LOCAL_SQLALCHEMY_DATABASE_URL := postgresql://postgres:postgres@localhost:5432/salaries_db
+LOCAL_CACHE_DATABASE_URL := sqlite:///./cache.db
 FIREBASE_SITE_NAME := salaries-tech
 API_KEY_SECRET_NAME := salaries-api-key
 EMAIL_VERIFICATION_SECRET_NAME := salaries-email-verification
@@ -89,7 +90,14 @@ set-up-database:
 	echo "Starting database..." && \
 	docker-compose up -d
 
-set-up-database-with-init: set-up-database
+set-up-database-with-init:
+	echo "Stopping database..." && \
+	docker-compose down && \
+	echo "Deleting old volumes..." && \
+	docker volume rm salaries_postgres_data && \
+	echo "Starting database..." && \
+	docker-compose up -d && \
+	sleep 4 && \
 	echo "Setting up database..." && \
 	docker cp dump.sql postgres-container:/dump.sql && \
 	docker exec postgres-container psql -U postgres -d salaries_db -f /dump.sql
@@ -102,6 +110,7 @@ set-local-env:
 		echo "PROJECT_ID=" >> backend/api/.env; \
 		echo "RECAPTCHA_KEY=" >> backend/api/.env; \
 		echo "SQLALCHEMY_DATABASE_URL=" >> backend/api/.env; \
+		echo "SQLALCHEMY_CACHE_DATABASE_URL=" >> backend/api/.env; \
 		echo "API_KEY_SECRET_NAME=" >> backend/api/.env; \
 		echo "ENV=dev" >> backend/api/.env; \
 		echo "EMAIL_VERIFICATION_SECRET_NAME=" >> backend/api/.env; \
@@ -125,6 +134,7 @@ set-local-env:
 		sed -i '' 's|^PROJECT_ID=.*|PROJECT_ID='"$(PROJECT_ID)"'|' backend/api/.env; \
 		sed -i '' 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$(CAPTCHA_KEY)"'|' backend/api/.env; \
 		sed -i '' 's|^SQLALCHEMY_DATABASE_URL=.*|SQLALCHEMY_DATABASE_URL='"$(LOCAL_SQLALCHEMY_DATABASE_URL)"'|' backend/api/.env; \
+		sed -i '' 's|^SQLALCHEMY_CACHE_DATABASE_URL=.*|SQLALCHEMY_CACHE_DATABASE_URL='"$(LOCAL_CACHE_DATABASE_URL)"'|' backend/api/.env; \
 		sed -i '' 's|^ENV=.*|ENV=dev|' backend/api/.env; \
 		sed -i '' 's|^API_KEY_SECRET_NAME=.*|API_KEY_SECRET_NAME='"$(API_KEY_SECRET_NAME)"'|' backend/api/.env; \
 		sed -i '' 's|^EMAIL_VERIFICATION_SECRET_NAME=.*|EMAIL_VERIFICATION_SECRET_NAME='"$(EMAIL_VERIFICATION_SECRET_NAME)"'|' backend/api/.env; \
@@ -135,6 +145,7 @@ set-local-env:
 		sed -i 's|^PROJECT_ID=.*|PROJECT_ID='"$(PROJECT_ID)"'|' backend/api/.env; \
 		sed -i 's|^RECAPTCHA_KEY=.*|RECAPTCHA_KEY='"$(CAPTCHA_KEY)"'|' backend/api/.env; \
 		sed -i 's|^SQLALCHEMY_DATABASE_URL=.*|SQLALCHEMY_DATABASE_URL='"$(LOCAL_SQLALCHEMY_DATABASE_URL)"'|' backend/api/.env; \
+		sed -i 's|^SQLALCHEMY_CACHE_DATABASE_URL=.*|SQLALCHEMY_CACHE_DATABASE_URL='"$(LOCAL_CACHE_DATABASE_URL)"'|' backend/api/.env; \
 		sed -i 's|^ENV=.*|ENV=dev|' backend/api/.env; \
 		sed -i 's|^API_KEY_SECRET_NAME=.*|API_KEY_SECRET_NAME='"$(API_KEY_SECRET_NAME)"'|' backend/api/.env; \
 		sed -i 's|^EMAIL_VERIFICATION_SECRET_NAME=.*|EMAIL_VERIFICATION_SECRET_NAME='"$(EMAIL_VERIFICATION_SECRET_NAME)"'|' backend/api/.env; \
@@ -201,6 +212,7 @@ deploy-backend: build-and-push
 		--set-env-vars RECAPTCHA_KEY=$(RECAPTCHA_KEY) \
 		--set-env-vars ALLOWED_ORIGINS=https://$(FIREBASE_SITE_NAME).web.app \
 		--set-env-vars SQLALCHEMY_DATABASE_URL=$(SQLALCHEMY_DATABASE_URL) \
+		--set-env-vars SQLALCHEMY_CACHE_DATABASE_URL=$(LOCAL_CACHE_DATABASE_URL) \
 		--set-env-vars ENV=$(ENV) \
 		--set-env-vars API_KEY_SECRET_NAME=$(API_KEY_SECRET_NAME) \
 		--set-env-vars EMAIL_VERIFICATION_SECRET_NAME=$(EMAIL_VERIFICATION_SECRET_NAME) \

@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
 from ..database import Base
-from . import CompanyType, company_tag
+from ..models import CompanyType, company_tag
 
 
 class TagDB(Base):

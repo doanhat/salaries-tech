@@ -1,4 +1,5 @@
-from backend.api.database import get_db
+from backend.api.database import get_db, init_cache_db, refresh_cache_table
+from backend.api.models import company_tag, salary_job, salary_technical_stack
 from backend.api.models.company import CompanyDB
 from backend.api.models.job import JobDB
 from backend.api.models.salary import SalaryDB
@@ -54,3 +55,49 @@ def test_create_and_query_technical_stack(test_db):
     queried_stack = test_db.query(TechnicalStackDB).filter_by(name="Python").first()
     assert queried_stack is not None
     assert queried_stack.name == "Python"
+
+
+def test_get_db_cache():
+    with get_db(is_cache=True) as db:
+        assert db is not None
+
+
+def test_init_cache_db(test_db):
+    company = CompanyDB(name="Cache Test Company", type="startup")
+    test_db.add(company)
+    test_db.commit()
+
+    init_cache_db()
+
+    with get_db(is_cache=True) as cache_db:
+        cached_company = (
+            cache_db.query(CompanyDB).filter_by(name="Cache Test Company").first()
+        )
+        assert cached_company is not None
+        assert cached_company.name == "Cache Test Company"
+        assert cached_company.type == "startup"
+
+
+def test_refresh_cache_table(test_db):
+    company = CompanyDB(name="Refresh Test Company", type="startup")
+    test_db.add(company)
+    test_db.commit()
+
+    init_cache_db()
+
+    with get_db() as source_db:
+        company = source_db.query(CompanyDB).first()
+        company.name = "Updated Company"
+        source_db.commit()
+
+    refresh_cache_table(CompanyDB)
+
+    with get_db(is_cache=True) as cache_db:
+        cached_company = cache_db.query(CompanyDB).first()
+        assert cached_company.name == "Updated Company"
+
+
+def test_refresh_cache_association_table(test_db):
+    refresh_cache_table(company_tag)
+    refresh_cache_table(salary_job)
+    refresh_cache_table(salary_technical_stack)
