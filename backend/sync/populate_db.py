@@ -21,18 +21,13 @@ def load_data():
     else:
         raise Exception(f"Failed to fetch data from API. Status code: {response.status_code}")
 
-def load_company_mapping():
-    with open("backend/sync/mapping_20241012172351.txt", "r") as f:
-        mapping = {}
-        for line in f:
-            line = line.strip()
-            if line:
-                parts = line.split(" - ", 1)
-                if len(parts) == 2:
-                    company, info = parts
-                    company_type = info.split(" (")[0]
-                    mapping[company.strip()] = company_type.strip().lower()
-        return mapping
+def load_company_mapping(session):
+    result = session.execute(text("""SELECT name, type FROM companies"""))
+    mapping = {}
+    for row in result:
+        company_name, company_type = row
+        mapping[company_name] = company_type
+    return mapping
 
 def prompt_for_verification(item, default="<none>"):
     user_input = input(f"Verify {item} (current: {default}): ").strip()
@@ -45,7 +40,7 @@ def populate_db():
     session = Session()
 
     try:
-        company_mapping = load_company_mapping()
+        company_mapping = load_company_mapping(session)
         data = load_data()
         with open("backend/sync/skipped_salaries.json", "r+") as f:
             skipped_data = json.load(f)

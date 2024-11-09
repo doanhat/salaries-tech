@@ -7302,5 +7302,53 @@
     "remote": {
       "variant": "full"
     }
+  },
+  {
+    "company": "Agence de d\u00e9veloppement web",
+    "title": "Lead Dev PHP",
+    "location": "Ile de france",
+    "compensation": 47000,
+    "date": "2024-11-08T00:00:00.000Z",
+    "level": "Mid",
+    "company_xp": 6,
+    "total_xp": 9,
+    "remote": {
+      "variant": "partial",
+      "dayCount": 3,
+      "base": "week",
+      "location": "remote"
+    }
+  },
+  {
+    "company": "Thales",
+    "title": "D\u00e9veloppeur FullStack",
+    "location": "Toulouse",
+    "compensation": 44000,
+    "date": "2024-11-07T00:00:00.000Z",
+    "level": "Mid",
+    "company_xp": 5,
+    "total_xp": 5,
+    "remote": {
+      "variant": "partial",
+      "dayCount": 10,
+      "base": "month",
+      "location": "remote"
+    }
+  },
+  {
+    "company": "Minist\u00e8re des arm\u00e9es",
+    "title": "Dev Fullstack",
+    "location": "Bordeaux",
+    "compensation": 21000,
+    "date": "2024-11-07T00:00:00.000Z",
+    "level": "Mid",
+    "company_xp": 4,
+    "total_xp": 4,
+    "remote": {
+      "variant": "partial",
+      "dayCount": 3,
+      "base": "week",
+      "location": "remote"
+    }
   }
 ]
